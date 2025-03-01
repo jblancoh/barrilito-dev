@@ -3,6 +3,9 @@ import Image from "next/image"
 import { Github, Linkedin, Twitter } from "lucide-react"
 
 export function Footer() {
+  if (process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true') {
+    return null
+  }
   return (
     <footer className="border-t py-12 bg-gradient-to-b from-background to-background/80">
       <div className="container grid gap-8 md:grid-cols-2 lg:grid-cols-4">

@@ -25,17 +25,17 @@ export function HeroSection() {
             </Button>
           </div>
           <div className="flex gap-4 pt-2">
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+            <a href="https://github.com/jblancoh" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
               <Button variant="ghost" size="icon" className="hover:bg-accent/20 hover:text-accent">
                 <Github className="h-5 w-5" />
               </Button>
             </a>
-            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+            <a href="https://www.linkedin.com/in/barrilitodev/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
               <Button variant="ghost" size="icon" className="hover:bg-primary/20 hover:text-primary">
                 <Linkedin className="h-5 w-5" />
               </Button>
             </a>
-            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+            <a href="https://twitter.com/barrilitodev" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
               <Button variant="ghost" size="icon" className="hover:bg-secondary/20 hover:text-secondary">
                 <Twitter className="h-5 w-5" />
               </Button>
