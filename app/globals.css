@@ -2,26 +2,96 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+
+    /* React Blue */
+    --primary: 193 95% 68%;
+    --primary-foreground: 0 0% 0%;
+
+    /* Firebase Yellow/Orange */
+    --secondary: 43 100% 58%;
+    --secondary-foreground: 0 0% 0%;
+
+    /* Light Gray */
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    /* JavaScript Yellow */
+    --accent: 53 93% 54%;
+    --accent-foreground: 0 0% 0%;
+
+    /* Nest.js Red */
+    --destructive: 346 83% 53%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 193 95% 68%;
+    --radius: 0.5rem;
+
+    /* Chart Colors */
+    --chart-1: 193 95% 68%; /* React Blue */
+    --chart-2: 346 83% 53%; /* Nest.js Red */
+    --chart-3: 43 100% 58%; /* Firebase Yellow/Orange */
+    --chart-4: 53 93% 54%; /* JavaScript Yellow */
+    --chart-5: 230 100% 45%; /* Deep Blue */
+  }
+
+  .dark {
+    --background: 0 0% 7%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
+
+    /* React Blue - brighter in dark mode */
+    --primary: 193 95% 68%;
+    --primary-foreground: 0 0% 0%;
+
+    /* Firebase Yellow/Orange - darker in dark mode */
+    --secondary: 43 100% 48%;
+    --secondary-foreground: 0 0% 0%;
+
+    /* Darker Gray */
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    /* JavaScript Yellow - darker in dark mode */
+    --accent: 53 93% 44%;
+    --accent-foreground: 0 0% 0%;
+
+    /* Nest.js Red - brighter in dark mode */
+    --destructive: 346 83% 53%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 193 95% 68%;
+
+    /* Chart Colors - adjusted for dark mode */
+    --chart-1: 193 95% 68%; /* React Blue */
+    --chart-2: 346 83% 53%; /* Nest.js Red */
+    --chart-3: 43 100% 58%; /* Firebase Yellow/Orange */
+    --chart-4: 53 93% 54%; /* JavaScript Yellow */
+    --chart-5: 230 100% 65%; /* Deep Blue - brighter */
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
