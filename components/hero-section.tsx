@@ -1,4 +1,3 @@
-import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Github, Linkedin, Twitter } from "lucide-react"
 
@@ -45,12 +44,12 @@ export function HeroSection() {
         <div className="flex justify-center">
           <div className="relative h-80 w-80">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-secondary/30 to-accent/30 rounded-full blur-3xl opacity-70"></div>
-            <Image
+            <img
               src="/assets/barrildevb.png"
               alt="BarrilitoDev Logo"
-              fill
+              width={320}
+              height={320}  
               className="object-contain dark:invert relative z-10"
-              priority
             />
           </div>
         </div>

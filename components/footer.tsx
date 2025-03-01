@@ -1,5 +1,4 @@
 import Link from "next/link"
-import Image from "next/image"
 import { Github, Linkedin, Twitter } from "lucide-react"
 
 export function Footer() {
@@ -11,7 +10,7 @@ export function Footer() {
       <div className="container grid gap-8 md:grid-cols-2 lg:grid-cols-4">
         <div className="flex flex-col gap-2">
           <Link href="/" className="flex items-center gap-2">
-            <Image
+            <img
               src="/assets/barrildevb.png"
               alt="BarrilitoDev Logo"
               width={40}

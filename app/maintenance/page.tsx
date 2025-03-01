@@ -1,4 +1,3 @@
-import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Clock, Wrench} from "lucide-react"
@@ -12,7 +11,7 @@ export default function MaintenancePage() {
           <div className="flex justify-center mb-8">
             <div className="relative w-24 h-24">
               <div className="absolute inset-0 bg-gradient-to-br from-primary via-secondary to-accent rounded-full blur-lg opacity-70"></div>
-              <Image
+              <img
                 src="/assets/barrildevb.png"
                 alt="BarrilitoDev Logo"
                 width={96}

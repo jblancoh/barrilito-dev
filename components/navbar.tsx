@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ModeToggle } from "@/components/mode-toggle"
@@ -21,7 +20,7 @@ export function Navbar() {
           <Link href="/" className="flex items-center gap-2">
             <div className="relative w-10 h-10">
               <div className="absolute inset-0 bg-gradient-to-br from-primary via-secondary to-accent rounded-full blur-lg opacity-70"></div>
-              <Image
+              <img
                 src="/assets/barrildevb.png"
                 alt="BarrilitoDev Logo"
                 width={40}

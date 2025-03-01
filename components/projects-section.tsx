@@ -1,4 +1,3 @@
-import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -45,10 +44,11 @@ export function ProjectsSection() {
         {projects.map((project, index) => (
           <Card key={index} className="overflow-hidden transition-all hover:shadow-lg border-none">
             <div className={`aspect-video relative ${project.color}`}>
-              <Image
+              <img
                 src={project.image || "/placeholder.svg"}
                 alt={project.title}
-                fill
+                width={500}
+                height={300}
                 className="object-cover mix-blend-multiply"
               />
             </div>
