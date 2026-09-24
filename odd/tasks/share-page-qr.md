@@ -126,5 +126,19 @@ Slices (planned): PR1 deep link = T1–T2 · PR2 share + QR = T3–T5 · PR3 OG 
 ```
 (This slice, T1+T2 together, landed under the ~400-line advisory budget.)
 
+### Parent verification + fix (`d8ecd27 fix(game): keep hash-less loads clean under strict mode double effects`) — route: inline (3 small, understood files)
+- Browser check found a defect: loading `/` with no hash left the URL at `/#about`. Cause: the
+  "skip first run" ref does not survive React StrictMode's dev double-invoked effects (ref stays
+  `false` after the first pass, second pass writes the hash).
+- Fix: pure `shouldSyncStopHash({ currentHash, stopKey, onInitialStop })` in `lib/share.ts`
+  derived from the URL instead of a ref. RED: 4 new tests failed with
+  `TypeError: shouldSyncStopHash is not a function`; GREEN: `78 passed (78)`.
+- `npx tsc --noEmit` clean; `pnpm lint` only pre-existing `<img>` warnings; `pnpm build` green (`/` 105 kB, static).
+- Browser (dev server, full mode): `/` stays hash-less; ArrowDown → `/#skills` with `history.length`
+  unchanged (1); fresh `/?x=1#projects` opens the board directly on Projects (square 12) and keeps
+  `?x=1`; `/#skills` reload opens on Skills. Lite `/?mode=lite#contact`: no canvas, `#contact` scrolled
+  to `top: 80px` (below the fixed navbar). Console clean after a fresh load (earlier
+  `shouldSyncStopHash is not defined` errors were the HMR window between two edits).
+
 ## Next step
 T3 (slice PR2).
