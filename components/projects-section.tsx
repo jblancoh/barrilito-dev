@@ -2,36 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Github, ExternalLink } from "lucide-react"
-
-const projects = [
-  {
-    title: "Proyecto E-commerce",
-    description: "Tienda online completa con carrito de compras, pagos y gestión de productos",
-    image: "/placeholder.svg?height=300&width=500",
-    tags: ["React", "Next.js", "Tailwind CSS", "Stripe"],
-    githubUrl: "#",
-    liveUrl: "#",
-    color: "bg-primary/10",
-  },
-  {
-    title: "Dashboard Analítico",
-    description: "Panel de control para visualización de datos y métricas empresariales",
-    image: "/placeholder.svg?height=300&width=500",
-    tags: ["React", "TypeScript", "Chart.js", "Firebase"],
-    githubUrl: "#",
-    liveUrl: "#",
-    color: "bg-secondary/10",
-  },
-  {
-    title: "App de Gestión de Tareas",
-    description: "Aplicación para organizar proyectos y tareas con colaboración en tiempo real",
-    image: "/placeholder.svg?height=300&width=500",
-    tags: ["React", "Redux", "Node.js", "MongoDB"],
-    githubUrl: "#",
-    liveUrl: "#",
-    color: "bg-accent/10",
-  },
-]
+import { projects } from "@/lib/content"
 
 export function ProjectsSection() {
   return (
@@ -111,4 +82,3 @@ export function ProjectsSection() {
     </section>
   )
 }
-

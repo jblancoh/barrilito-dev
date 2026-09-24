@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Mail, MapPin, Phone } from "lucide-react"
+import { contactInfo } from "@/lib/content"
 
 export function ContactSection() {
   const [formData, setFormData] = useState({
@@ -129,7 +130,7 @@ export function ContactSection() {
               </div>
               <div>
                 <h3 className="font-medium">Email</h3>
-                <p className="text-muted-foreground">contacto@barrilito.dev</p>
+                <p className="text-muted-foreground">{contactInfo.email}</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
@@ -138,7 +139,7 @@ export function ContactSection() {
               </div>
               <div>
                 <h3 className="font-medium">Teléfono</h3>
-                <p className="text-muted-foreground">+52 123 456 7890</p>
+                <p className="text-muted-foreground">{contactInfo.phone}</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
@@ -147,20 +148,21 @@ export function ContactSection() {
               </div>
               <div>
                 <h3 className="font-medium">Ubicación</h3>
-                <p className="text-muted-foreground">Ciudad de México, México</p>
+                <p className="text-muted-foreground">{contactInfo.location}</p>
               </div>
             </div>
             <div className="mt-8 pt-6 border-t">
               <h3 className="font-medium mb-4">Horario de trabajo</h3>
               <div className="grid grid-cols-2 gap-2">
-                <div className="p-3 rounded-lg bg-primary/5">
-                  <p className="font-medium">Lunes - Viernes</p>
-                  <p className="text-muted-foreground">9:00 AM - 6:00 PM</p>
-                </div>
-                <div className="p-3 rounded-lg bg-secondary/5">
-                  <p className="font-medium">Sábado</p>
-                  <p className="text-muted-foreground">10:00 AM - 2:00 PM</p>
-                </div>
+                {contactInfo.schedule.map((slot, index) => (
+                  <div
+                    key={slot.days}
+                    className={`p-3 rounded-lg ${index % 2 === 0 ? "bg-primary/5" : "bg-secondary/5"}`}
+                  >
+                    <p className="font-medium">{slot.days}</p>
+                    <p className="text-muted-foreground">{slot.hours}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </CardContent>
