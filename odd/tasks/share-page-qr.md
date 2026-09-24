@@ -41,9 +41,9 @@ Slices (planned): PR1 deep link = T1–T2 · PR2 share + QR = T3–T5 · PR3 OG 
 - [x] T1 `lib/share.ts`: `buildShareUrl`, `getShareStrategy`, `parseStopHash` with vitest (RED→GREEN) — route: delegated (writer trigger: 2+ files, preparation reading)
 - [x] T2 Board deep link: initial stop from `location.hash`, `replaceState` on stop change, invalid hash ignored; verify lite `/#projects` — route: delegated (same writer as T1)
 - [x] T2b Keep foreign fragments (skip links, auth callbacks) intact on mount; test `navigateToStop` replaceState — added from RDD review R3 advisories — route: inline (2 small, understood files)
-- [ ] T3 `qrcode` dependency + `<ShareQr>` SVG (dark-on-light) with tests for the QR options helper — route: pending
-- [ ] T4 shadcn `dialog` + `<ShareDialog>`: copy link with feedback, download QR (PNG/SVG), a11y — route: pending
-- [ ] T5 `<ShareButton>` in navbar desktop + mobile menu; native share when available, dialog otherwise — route: pending
+- [x] T3 `qrcode` dependency + `<ShareQr>` SVG (dark-on-light) with tests for the QR options helper — route: delegated (writer trigger: 2+ non-trivial files)
+- [x] T4 shadcn `dialog` + `<ShareDialog>`: copy link with feedback, download QR (PNG/SVG), a11y — route: delegated (writer trigger: 2+ non-trivial files)
+- [x] T5 `<ShareButton>` in navbar desktop + mobile menu; native share when available, dialog otherwise — route: delegated (writer trigger: 2+ non-trivial files)
 - [ ] T6 `metadataBase` + `openGraph`/`twitter` metadata and OG image — route: pending
 - [ ] T7 Browser verification: light/dark, 375px/desktop, `/#projects` in full and lite, QR scans, console clean — route: pending
 
@@ -148,6 +148,81 @@ Slices (planned): PR1 deep link = T1–T2 · PR2 share + QR = T3–T5 · PR3 OG 
   `/?mode=lite#projects`, pushState never) passed on first run — characterization of existing behavior.
 - GREEN: `current === null && onInitialStop` → no write; `81 passed (81)`. `tsc --noEmit` clean; `pnpm lint` 0 errors.
 
+### T3 — QR rendering (`9030dac feat(share): render qr codes as theme-independent svg`)
+- `pnpm add qrcode` + `pnpm add -D @types/qrcode`. New pure helper `lib/qr.ts`:
+  `buildQrMatrixPath(value)` calls `QRCode.create(value, { errorCorrectionLevel: "M" })` and
+  walks its `BitMatrix` (`modules.get(row, col)`) into an SVG path `d` string of 1×1 squares, each
+  offset by a 4-module quiet zone; also exports the fixed `QR_DARK`/`QR_LIGHT` colors.
+- RED: `pnpm test -- lib/qr.test.ts` → `Error: Cannot find module './qr' imported from
+  .../lib/qr.test.ts` (test file written first).
+- GREEN: after implementing `buildQrMatrixPath` — `86 passed (86)` (81 pre-existing + 5 new).
+- `components/share/share-qr.tsx`: `forwardRef<SVGSVGElement, ...>` renders
+  `<svg viewBox="0 0 N N" role="img" aria-label=… shapeRendering="crispEdges">` with a `QR_LIGHT`
+  background `<rect>` and a `QR_DARK` `<path>` — no `dangerouslySetInnerHTML`. Always dark-on-light
+  even in dark mode (scanner reliability), commented in both `lib/qr.ts` and the component as a
+  deliberate exception to "theme tokens only".
+- Deviation: the test asserting the quiet zone uses `Array.from(path.matchAll(...))` instead of
+  `[...path.matchAll(...)]` — this tsconfig has no explicit `target`, so spread-iterating a
+  `RegExpStringIterator` fails `tsc --noEmit` with TS2802 (needs `--downlevelIteration` or
+  ES2015+ target); `Array.from` over the same iterable compiles cleanly under any target.
+
+### T4 — Share dialog (`5607375 feat(share): add share dialog with copy and download`)
+- `pnpm add @radix-ui/react-dialog`. New pure helper `shareFileName(url)` in `lib/share.ts`:
+  `barrilitodev-<stopKey>` when the URL's hash matches a real stop (via `parseStopHash`), else
+  plain `barrilitodev`.
+  - RED: `pnpm test -- lib/share.test.ts` → `4 failed | 86 passed (90)`, all
+    `TypeError: shareFileName is not a function`.
+  - GREEN: `90 passed (90)`.
+- `components/ui/dialog.tsx`: standard shadcn/ui dialog primitives (`Dialog`, `DialogTrigger`,
+  `DialogPortal`, `DialogOverlay`, `DialogClose`, `DialogContent` with a lucide `X` close button
+  and sr-only "Cerrar", `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription`) built on
+  `@radix-ui/react-dialog`, `cn` and `tailwindcss-animate` — not run through the shadcn CLI.
+- `components/share/share-dialog.tsx` (`ShareDialog({ open, onOpenChange, url })`): title
+  "Compartir esta página" + description; `<ShareQr>` in a white rounded padded box sized `h-52 w-52`
+  (fits comfortably inside the dialog's `w-[calc(100%-2rem)] max-w-sm` at 375px); read-only `Input`
+  with the URL + "Copiar enlace" using `navigator.clipboard.writeText`, "¡Enlace copiado!" feedback
+  for 2s through an `aria-live="polite"` region, falling back to `input.select()` +
+  "Copia el enlace manualmente" when the Clipboard API is missing or the write rejects;
+  "Descargar PNG"/"Descargar SVG" (`XMLSerializer` + namespaced clone for SVG; an offscreen
+  `Image` + 1024×1024 `<canvas>` + `toBlob` for PNG; every `URL.createObjectURL` is revoked after
+  use); "Más opciones" shown only when `navigator.share` exists, calling
+  `navigator.share({ title: document.title, url })` and ignoring `AbortError`.
+
+### T5 — Share button (`4b1fcbd feat(share): add share button to the navbar`)
+- `components/share/share-button.tsx`: on click, `url = buildShareUrl(window.location.href)` read
+  at click time (so it includes the current `#stop`), then
+  `getShareStrategy({ hasNativeShare: typeof navigator.share === "function", isCoarsePointer:
+  window.matchMedia("(pointer: coarse)").matches })`. `"native"` calls `navigator.share`, ignores
+  `AbortError`, and falls back to the dialog on any other error; `"dialog"` opens it directly.
+  `ShareDialog` is loaded via `next/dynamic(..., { ssr: false })` and only mounted after the first
+  open (`hasOpenedDialog` state), so its chunk (qrcode + Radix Dialog) is fetched on demand, not on
+  page load.
+- One component serves both navbar surfaces via a `variant` prop: `"icon"` renders the
+  `Share2`/ghost/icon button (`aria-label`/`title="Compartir"`) placed next to `ModeToggle` in the
+  desktop action group; `"menu-item"` renders a plain text entry styled like the other mobile-menu
+  links, added to `components/navbar.tsx`'s mobile menu with `onBeforeShare={() => setIsMenuOpen(false)}`.
+- No unit tests for this task (DOM/React wiring only, per task instructions) — verified by
+  `tsc`/lint/build below.
+
+### Verification (T3–T5, run together after T5)
+- `pnpm test`: **PASS** — `Test Files 8 passed (8)`, `Tests 90 passed (90)`.
+- `npx tsc --noEmit`: **PASS** — no output, exit clean.
+- `pnpm lint`: **PASS** — only the same pre-existing `<img>` warnings as T1/T2 (5 files, all outside
+  this feature's scope). No errors, no new warnings from T3–T5 files.
+- `pnpm build`: **PASS** — `✓ Compiled successfully`; `/` First Load JS **before: 105 kB → after:
+  106 kB** (qrcode + Radix Dialog stay in `ShareDialog`'s dynamic, `ssr:false` chunk, not the
+  initial bundle — confirms the lazy-load requirement).
+
+### Line counts
+`git diff --shortstat e21e46d..HEAD -- . ':!pnpm-lock.yaml' ':!package-lock.json'`:
+```
+11 files changed, 538 insertions(+), 2 deletions(-)
+```
+(T3+T4+T5 together; lockfile changes for `qrcode`/`@types/qrcode` landed with T3's commit, and
+`@radix-ui/react-dialog`'s with T4's commit, per the "lockfile with its task" rule — each `pnpm add`
+was re-run against a package.json with only that task's dependency present so the lockfile diff
+split the same way.)
+
 ## Review (RDD)
 - Slice PR1 range `f65a194..2456022` (includes `2456022 chore: ignore gentle-ai skill registry cache`, added so
   the untracked `.atl/` registry no longer blocks candidate selection — user choice). Assessed: risk medium,
@@ -161,4 +236,4 @@ Slices (planned): PR1 deep link = T1–T2 · PR2 share + QR = T3–T5 · PR3 OG 
 - Note: the T2 entry above describing a "skip the first effect run" ref is superseded by `d8ecd27`.
 
 ## Next step
-T3 (slice PR2). T2b range `2456022..e21e46d` assessed medium, under_budget (62 lines): pending in slice PR2 review.
+Slice PR2 review assessment, then T6 (slice PR3).
