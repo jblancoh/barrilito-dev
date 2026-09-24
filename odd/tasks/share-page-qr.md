@@ -44,6 +44,7 @@ Slices (planned): PR1 deep link = T1–T2 · PR2 share + QR = T3–T5 · PR3 OG 
 - [x] T3 `qrcode` dependency + `<ShareQr>` SVG (dark-on-light) with tests for the QR options helper — route: delegated (writer trigger: 2+ non-trivial files)
 - [x] T4 shadcn `dialog` + `<ShareDialog>`: copy link with feedback, download QR (PNG/SVG), a11y — route: delegated (writer trigger: 2+ non-trivial files)
 - [x] T5 `<ShareButton>` in navbar desktop + mobile menu; native share when available, dialog otherwise — route: delegated (writer trigger: 2+ non-trivial files)
+- [x] T5b Board ignores input while a dialog is open; standalone SVG export — added from parent browser verification — route: delegated (same writer)
 - [ ] T6 `metadataBase` + `openGraph`/`twitter` metadata and OG image — route: pending
 - [ ] T7 Browser verification: light/dark, 375px/desktop, `/#projects` in full and lite, QR scans, console clean — route: pending
 
@@ -222,6 +223,74 @@ Slices (planned): PR1 deep link = T1–T2 · PR2 share + QR = T3–T5 · PR3 OG 
 `@radix-ui/react-dialog`'s with T4's commit, per the "lockfile with its task" rule — each `pnpm add`
 was re-run against a package.json with only that task's dependency present so the lockfile diff
 split the same way.)
+
+### T5b — Parent browser verification fixes
+Three issues found by the parent's browser verification of T3–T5, fixed as one follow-up work unit
+in the same worktree/branch.
+
+**Bug 1 — board input leaked through the open share dialog** (`7b555e3 fix(game): ignore board
+input while a dialog is open`). Repro: `/?t=2#projects`, open the share dialog, focus "Descargar
+PNG", press ArrowDown → the board behind the modal walked to the next stop and the URL changed,
+while the dialog kept showing the old URL/QR. Cause: `board-game.tsx`'s `wheel`/`keydown`/
+`touchstart`/`touchend` listeners on `window` only guarded against INPUT/TEXTAREA targets.
+- New pure helper `shouldIgnoreBoardInput({ targetTag, targetIsContentEditable, targetInDialog,
+  modalOpen })` in `components/game/board-events.ts` (kept the INPUT/TEXTAREA rule, added SELECT
+  and contenteditable).
+  - RED: `pnpm test -- board-events.test.ts` → `6 failed | 90 passed (96)`, all
+    `TypeError: shouldIgnoreBoardInput is not a function`.
+  - GREEN: `96 passed (96)`.
+- Wired into all four `board-game.tsx` handlers via two small DOM helpers: `isModalOpen()` —
+  `document.querySelector('[role="dialog"][data-state="open"]')` — and `describeInputTarget(target)`
+  — tag, `isContentEditable`, and `target.closest('[role="dialog"]')` — read fresh at event time, so
+  the board never couples to the share feature's React state (Radix `DialogContent` renders
+  `role="dialog"` and `data-state`, confirmed in `node_modules/@radix-ui/react-dialog/dist/index.mjs`).
+  When `shouldIgnoreBoardInput` is true, the handler returns immediately: no `preventDefault()`, no
+  move — fixing both the board-walks-behind-the-dialog bug and the Space-to-activate-a-button
+  breakage the same guard was causing.
+- Browser-verified (dev server, full mode, `/?t=2#projects`): opened the dialog, focused "Descargar
+  PNG", pressed ArrowDown — board stayed on CASILLA 12 (Projects), dialog still showed
+  `http://localhost:3000/?t=2#projects`. `read_page` confirmed `dialog [ref_24]` present throughout.
+
+**Gap — downloaded SVG had no standalone size, and its object URL was revoked too eagerly**
+(`acd570d fix(share): export standalone sized svg and defer url revoke`). In
+`share-dialog.tsx#serializeQrSvg`, the cloned `<svg>` kept only `viewBox` plus the Tailwind `class`
+(meaningless outside the page) — some apps open it at an odd size. Fixed: the clone now gets explicit
+`width`/`height` (`SVG_EXPORT_SIZE = 512`) and has `class` removed. Also, `downloadBlob` revoked its
+`URL.createObjectURL` synchronously right after `anchor.click()`, which can cancel the download in
+some browsers; now deferred by `REVOKE_URL_DELAY_MS = 100` via `setTimeout`. DOM-only change, no new
+pure logic — verified by `tsc`/lint/build.
+
+**Bug 2 — the mobile menu's "Compartir" never showed the dialog** (`b09bacf fix(share): keep the
+share dialog mounted when the mobile menu closes`). Repro: 375px, `/?mode=lite#skills`, no
+`navigator.share`, coarse pointer → strategy `"dialog"`; tapping the hamburger then "Compartir"
+closed the menu and no `[role="dialog"]` ever appeared. Cause: `onBeforeShare` called
+`setIsMenuOpen(false)`, which unmounted the menu-item `<ShareButton>` — the component that owned
+`dialogOpen`/`hasOpenedDialog` and rendered `<ShareDialog>` — taking the about-to-open dialog down
+with it.
+- Fix: extracted the share state and click logic into `components/share/use-share.tsx`
+  (`useShare()` → `{ share, dialog }`), called once in `Navbar` above the collapsible mobile menu;
+  `{dialog}` is now rendered at the header's root, outside the `{isMenuOpen && (...)}` block, so it
+  survives the menu closing. `share()` holds the exact same click logic T5 had (live
+  `buildShareUrl`/`getShareStrategy`, native with `AbortError` ignored, dialog fallback), and
+  `ShareDialog` is still lazy-loaded via `next/dynamic({ ssr: false })`, only mounted after the
+  first open. `<ShareButton>` is now a thin, stateless presentational trigger
+  (`{ variant, className, onShare }`) — no logic duplicated between the desktop icon and the mobile
+  menu item, which calls `setIsMenuOpen(false)` then `share()`.
+- No new pure logic (state wiring only) — no unit test added; verified by `tsc`/lint/build and
+  browser.
+- Browser-verified (375px, `/?mode=lite#skills`, confirmed via `navigator.share` `"undefined"` and
+  `matchMedia("(pointer: coarse)").matches === true` so strategy resolves to `"dialog"`): opened the
+  hamburger menu, tapped "Compartir" — menu closed and the dialog appeared with
+  `input[aria-label="Enlace para compartir"].value === "http://localhost:3000/#skills"` (mode
+  stripped, hash kept); `document.documentElement.scrollWidth === clientWidth === 375` (no
+  horizontal overflow).
+
+### Verification (T5b, run together)
+- `pnpm test`: **PASS** — `Test Files 8 passed (8)`, `Tests 96 passed (96)`.
+- `npx tsc --noEmit`: **PASS** — no output, exit clean.
+- `pnpm lint`: **PASS** — only the same pre-existing `<img>` warnings (5 files outside this
+  feature's scope). No errors, no new warnings.
+- `pnpm build`: **PASS** — `✓ Compiled successfully`; `/` First Load JS unchanged at **106 kB**.
 
 ## Review (RDD)
 - Slice PR1 range `f65a194..2456022` (includes `2456022 chore: ignore gentle-ai skill registry cache`, added so
