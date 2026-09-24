@@ -20,10 +20,10 @@ function panelCanScroll(panel: HTMLDivElement | null, target: EventTarget | null
 
 export interface BoardGameProps {
   /**
-   * Invoked when the board can't run (renderer/init failure, sustained low
-   * FPS, or a ready timeout — see use-board-scene.ts). HomeSwitch uses it
-   * to fall back to the classic home. Wired up in T4; harmless no-op until
-   * then.
+   * Invoked at most once when the board can't run (renderer/init failure,
+   * a lost WebGL context, sustained low FPS, or never reaching ready
+   * within the startup timeout — see use-board-scene.ts). HomeSwitch uses
+   * it to fall back to the classic home.
    */
   onFallback?: (reason: string) => void
 }
@@ -43,6 +43,7 @@ export function BoardGame({ onFallback }: BoardGameProps = {}) {
     camera: CAMERA,
     speed: 1,
     confetti: true,
+    onFallback: (reason: string) => onFallbackRef.current?.(reason),
     onArrive: () => {
       if (panelRef.current) panelRef.current.scrollTop = 0
     },
