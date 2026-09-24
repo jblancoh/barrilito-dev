@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ModeToggle } from "@/components/mode-toggle"
-import { dispatchBoardGoTo } from "@/components/game/board-events"
+import { navigateToStop } from "@/components/game/board-events"
 import type { StopKey } from "@/components/game/board-config"
 
 const NAV_LINKS: { key: StopKey; label: string; hoverClass: string }[] = [
@@ -23,7 +23,7 @@ export function Navbar() {
     return null
   }
 
-  const goTo = (key: StopKey) => dispatchBoardGoTo(key)
+  const goTo = (key: StopKey) => navigateToStop(key)
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
