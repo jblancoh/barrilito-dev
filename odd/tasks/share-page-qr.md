@@ -22,6 +22,9 @@ previews in chat apps are poor.
 
 ## Constraints
 - Next.js 14 App Router, React 18, Tailwind 3, shadcn/ui, pnpm. Theme tokens only.
+- If a custom domain differs from the Vercel project's own production domain, set
+  `NEXT_PUBLIC_SITE_URL` in Vercel (Project Settings → Environment Variables) so `metadataBase`
+  and the OG/Twitter image URLs resolve to the real public domain instead of the Vercel-assigned one.
 - Use `#hash`, not `?stop=`: lite mode already renders `<section id={stopKey}>`, and the page stays static.
 - `history.replaceState`, never `pushState` (no history spam); unknown hashes are ignored.
 - QR is always dark-on-light, including dark mode (scanner reliability). Generated client-side, no network.
@@ -46,7 +49,7 @@ Slices (planned): PR1 deep link = T1–T2 · PR2 share + QR = T3–T5 · PR3 OG 
 - [x] T5 `<ShareButton>` in navbar desktop + mobile menu; native share when available, dialog otherwise — route: delegated (writer trigger: 2+ non-trivial files)
 - [x] T5b Board ignores input while a dialog is open; standalone SVG export — added from parent browser verification — route: delegated (same writer)
 - [x] T5c Touch guard symmetric: an ignored touchstart cannot pair with a later touchend (`4703ab4`) — added from RDD review R3 warning — route: inline (1 mechanical edit)
-- [ ] T6 `metadataBase` + `openGraph`/`twitter` metadata and OG image — route: pending
+- [x] T6 `metadataBase` + `openGraph`/`twitter` metadata and OG image — route: delegated (writer trigger: 3 new/changed non-trivial files)
 - [ ] T7 Browser verification: light/dark, 375px/desktop, `/#projects` in full and lite, QR scans, console clean — route: pending
 
 ## Acceptance criteria
@@ -293,6 +296,57 @@ with it.
   feature's scope). No errors, no new warnings.
 - `pnpm build`: **PASS** — `✓ Compiled successfully`; `/` First Load JS unchanged at **106 kB**.
 
+### T6 — link previews (`1629810 feat(seo): add open graph and twitter link previews`)
+- New pure helper `lib/site-url.ts#resolveSiteUrl(env)`: `NEXT_PUBLIC_SITE_URL` (full URL, trailing
+  slash tolerated, falls through if invalid) → `https://${VERCEL_PROJECT_PRODUCTION_URL}` → `https://${VERCEL_URL}`
+  → `http://localhost:3000`; empty/whitespace values ignored at every step.
+  - RED: `pnpm test -- lib/site-url.test.ts` → `Error: Cannot find module './site-url' imported from
+    .../lib/site-url.test.ts` (test file written first, no implementation).
+  - GREEN: `108 passed (108)` (96 pre-existing + 12 new). Full `pnpm test` also green at `108 passed (108)`.
+- New `lib/site-metadata.ts`: `SITE_TITLE`/`SITE_DESCRIPTION` constants shared by `app/layout.tsx`
+  and the OG/Twitter image, so the preview copy can't drift from the page's own title/description
+  (plain string literals, no branching logic — no test added, consistent with other non-pure/DOM
+  files in this feature).
+- `app/layout.tsx`: `metadataBase: resolveSiteUrl(process.env)`; kept the existing title/description
+  (now sourced from `lib/site-metadata.ts`); added `openGraph` (`type: "website"`, `locale: "es_MX"`,
+  `siteName: "BarrilitoDev"`, title, description, `url: "/"`) and `twitter`
+  (`card: "summary_large_image"`, title, description).
+- `app/opengraph-image.tsx`: `ImageResponse` from `next/og` on the default Node.js runtime (no
+  `export const runtime`). `alt` (Spanish), `size = { width: 1200, height: 630 }`,
+  `contentType = "image/png"`. Dark background (`#121212`) with a top gradient bar and "BarrilitoDev"
+  in large text, the site's Spanish description as a one-line tagline, and a
+  "Serpientes y escaleras · Portafolio" subtitle. Colors are hex conversions of the HSL theme tokens
+  from `app/globals.css` (`--primary` 193 95% 68% → `#60d9fb`, `--secondary` 43 100% 58% → `#ffc229`,
+  `--accent` 53 93% 54% → `#f7dd1d`), documented in a code comment since `ImageResponse` can't read
+  CSS custom properties. Logo embedded: `public/assets/barrildevb.png` is read with `fs.readFileSync`
+  relative to `process.cwd()` and inlined as a base64 data URL (falls back to no logo if the read fails).
+- `app/twitter-image.tsx`: re-exports `default`/`alt`/`size`/`contentType` from `./opengraph-image`
+  so X/Twitter reuses the identical generated card.
+- Deviation: `lib/site-url.ts#SiteUrlEnv` needed an index signature (`[key: string]: string | undefined`)
+  for `resolveSiteUrl(process.env)` to type-check — `tsc --noEmit` failed with `TS2559: Type
+  'ProcessEnv' has no properties in common with type 'SiteUrlEnv'` without it (a TS "weak type" check
+  triggered because every property on `SiteUrlEnv` is optional); the index signature doesn't change
+  the runtime precedence logic or the test cases.
+
+### Verification (T6)
+- `pnpm test`: **PASS** — `Test Files 9 passed (9)`, `Tests 108 passed (108)`.
+- `npx tsc --noEmit`: **PASS** — no output, exit clean.
+- `pnpm lint`: **PASS** — only the same pre-existing `<img>` warnings (5 files outside this feature's
+  scope); `app/opengraph-image.tsx`'s own `<img>` (for the inlined logo) is suppressed with
+  `eslint-disable-next-line @next/next/no-img-element` since `next/image` doesn't apply inside
+  `ImageResponse`. No errors, no new warnings.
+- `pnpm build`: **PASS** — `✓ Compiled successfully`; route table shows both
+  `○ /opengraph-image  0 B  0 B` and `○ /twitter-image  0 B  0 B` as static, `○ /maintenance` still
+  builds, `/` unchanged at 106 kB First Load JS.
+- Browser check (`pnpm start -p 3100`, stopped after the check; port 3000 untouched): `curl -s
+  http://localhost:3100/` head contains `og:title`, `og:description`, `og:url`, `og:site_name`,
+  `og:locale`, `og:image` (+ `:alt`/`:type`/`:width`/`:height`), `og:type`, and `twitter:card`,
+  `twitter:title`, `twitter:description`, `twitter:image` (+ `:alt`/`:type`/`:width`/`:height`).
+  `og:image`/`twitter:image` resolve to `http://localhost:3000/...` (from `resolveSiteUrl`'s
+  localhost fallback, since no `NEXT_PUBLIC_SITE_URL`/`VERCEL_*` env vars are set locally — expected).
+  `curl -sI http://localhost:3100/opengraph-image` and `.../twitter-image` both `HTTP/1.1 200 OK`,
+  `content-type: image/png`.
+
 ## Review (RDD)
 - Slice PR1 range `f65a194..2456022` (includes `2456022 chore: ignore gentle-ai skill registry cache`, added so
   the untracked `.atl/` registry no longer blocks candidate selection — user choice). Assessed: risk medium,
@@ -317,4 +371,4 @@ with it.
 - Known limitation: a hash-only navigation performed while the dev page is still compiling (before the board mounts) can be lost; full loads with a hash work.
 
 ## Next step
-T6 (slice PR3): `metadataBase` + `openGraph`/`twitter` metadata and OG image; then T7 final browser verification. T5c pending in slice PR3 review.
+Slice PR3 review assessment, then T7 final browser verification.
