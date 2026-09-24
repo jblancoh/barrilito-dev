@@ -37,7 +37,7 @@ Forecast: ~450 authored changed lines.
 - [x] T0 Sync branch with `origin/main` (fast-forward to 5c13f83); `pnpm test` 29/29 green — route: inline
 - [x] T1 `detectRenderMode` pure function + WebGL/env probe, overrides `?mode=` and stored preference — route: delegated (writer trigger)
 - [x] T2 Visible classic home (sections with `id={stop.key}`) + `HomeSwitch` in `app/page.tsx` — route: delegated
-- [ ] T3 `navigateToStop` (board event if listener, else scrollIntoView) used by navbar — route: delegated
+- [x] T3 `navigateToStop` (board event if listener, else scrollIntoView) used by navbar — route: delegated
 - [ ] T4 Runtime fallback: try/catch renderer/init, `webglcontextlost`, `shouldDegrade` FPS watchdog, ready timeout → switch to lite — route: delegated
 - [ ] T5 Manual toggle "Versión ligera / Ver en 3D" persisting preference — route: delegated
 - [ ] T6 Cheaper full mode: pause RAF when hidden, DPR ≤ 1.5, lighter shadows/antialias on modest devices — route: delegated
@@ -55,5 +55,7 @@ Forecast: ~450 authored changed lines.
 - Deviation (infra, commit `8a31d31`): `pnpm lint` failed with an ESLint "@next/next plugin conflicted" error caused by this worktree living inside the main checkout's directory tree (ESLint's config search walked up and found the parent repo's `.eslintrc.json` too). Fixed by adding `"root": true` to this worktree's `.eslintrc.json` — one line, no rule changes, unblocks the required `pnpm lint`/`pnpm build` verification.
 - T2: commit `d732aba`. Extracted `section-registry.tsx` (shared stop→component map) out of `board-game.tsx`; evolved `seo-fallback.tsx` into `ClassicHome({ visible })` reusing the same section components (kept `SeoFallback` export alias); added `home-switch.tsx` deciding full/lite after mount and mounting the existing `next/dynamic(ssr:false)` `BoardGame` only for full; `app/page.tsx` now just renders `HomeSwitch`. `BoardGame` gained an optional `onFallback` prop (stored in a ref; wired up in T4). Verified: `pnpm test` 39/39, `tsc --noEmit` clean, `pnpm lint` clean (only pre-existing unrelated `<img>` warnings), `pnpm build` green — `/` route First Load JS dropped 244 kB → 105 kB (three.js no longer in the initial bundle). Browser-checked `/?mode=lite` at 375px (no horizontal scroll, `scrollWidth === clientWidth === 375`) and the default full board — both render with no console errors. Navbar doesn't yet scroll the classic home (no board listener and no scroll wiring yet) — that's T3.
 
+- T3: commit `63c8846`. TDD: RED — `pnpm test` failed 4/4 new cases, "decideNavigation is not a function" (board-events.test.ts). GREEN — added `decideNavigation` (pure), `boardListenerCount`/`hasBoardListener` bookkeeping in `onBoardGoTo`, and `navigateToStop` to `board-events.ts`; `navbar.tsx` calls `navigateToStop` instead of `dispatchBoardGoTo`. `pnpm test` 43/43, `tsc --noEmit` clean, `pnpm lint` clean. Browser-verified: `/?mode=lite` navbar click scrolls to the clicked section; default full mode navbar click still drives the board (token animates); no console errors either way.
+
 ## Next step
-T3.
+T4.
