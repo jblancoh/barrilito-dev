@@ -45,6 +45,7 @@ Slices (planned): PR1 deep link = T1–T2 · PR2 share + QR = T3–T5 · PR3 OG 
 - [x] T4 shadcn `dialog` + `<ShareDialog>`: copy link with feedback, download QR (PNG/SVG), a11y — route: delegated (writer trigger: 2+ non-trivial files)
 - [x] T5 `<ShareButton>` in navbar desktop + mobile menu; native share when available, dialog otherwise — route: delegated (writer trigger: 2+ non-trivial files)
 - [x] T5b Board ignores input while a dialog is open; standalone SVG export — added from parent browser verification — route: delegated (same writer)
+- [x] T5c Touch guard symmetric: an ignored touchstart cannot pair with a later touchend (`4703ab4`) — added from RDD review R3 warning — route: inline (1 mechanical edit)
 - [ ] T6 `metadataBase` + `openGraph`/`twitter` metadata and OG image — route: pending
 - [ ] T7 Browser verification: light/dark, 375px/desktop, `/#projects` in full and lite, QR scans, console clean — route: pending
 
@@ -304,5 +305,16 @@ with it.
   - R3-dom-hash-wiring-unasserted (suggestion): no test that `navigateToStop` uses replaceState, not pushState.
 - Note: the T2 entry above describing a "skip the first effect run" ref is superseded by `d8ecd27`.
 
+## Review (RDD) — slice PR2
+- Range `2456022..74896e9` (T2b, T3–T5, T5b; includes `pnpm-lock.yaml`): risk medium, 1481 lines, `review_due`
+  slice_budget_reached. Consent granted by user. Lineage `review-658a0b7d7c0b22b6`: one lens (reliability) →
+  approved; acknowledgement burned authority. Reviewed boundary advances to `74896e9`.
+- Advisory, non-blocking findings:
+  - R3-stale-touch-start-after-ignored-touchstart (warning) — fixed in T5c (`4703ab4`): `tsc` clean, `pnpm test` 96/96, `pnpm lint` 0 errors.
+  - R3-board-guard-wiring-unasserted (warning) — follow-up: no test for the `isModalOpen` selector / `closest('[role="dialog"]')` wiring; proven only by browser check.
+  - R3-use-share-fallback-untested (suggestion) — follow-up: hook-level test for native → AbortError / other error → dialog.
+  - R3-silent-share-and-png-failures (suggestion) — follow-up: surface "Más opciones" and PNG export failures in the aria-live region.
+- Known limitation: a hash-only navigation performed while the dev page is still compiling (before the board mounts) can be lost; full loads with a hash work.
+
 ## Next step
-Slice PR2 review assessment, then T6 (slice PR3).
+T6 (slice PR3): `metadataBase` + `openGraph`/`twitter` metadata and OG image; then T7 final browser verification. T5c pending in slice PR3 review.
