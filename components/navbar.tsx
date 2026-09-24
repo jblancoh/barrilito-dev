@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ModeToggle } from "@/components/mode-toggle"
+import { ShareButton } from "@/components/share/share-button"
+import { useShare } from "@/components/share/use-share"
 import { navigateToStop } from "@/components/game/board-events"
 import type { StopKey } from "@/components/game/board-config"
 import { useRenderMode } from "@/components/game/render-mode-context"
@@ -22,6 +24,9 @@ export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const pathname = usePathname()
   const { mode, setMode } = useRenderMode()
+  // Owns the share dialog's own state so it survives the mobile menu below
+  // closing right when a "Compartir" tap opens it (see use-share.tsx).
+  const { share, dialog } = useShare()
 
   if (process.env.NEXT_PUBLIC_MAINTENANCE_MODE === "true") {
     return null
@@ -73,6 +78,7 @@ export function Navbar() {
             </Button>
           )}
           <ModeToggle />
+          <ShareButton onShare={share} />
           <Button
             variant="default"
             onClick={() => goTo("contact")}
@@ -102,6 +108,13 @@ export function Navbar() {
                 {link.label}
               </button>
             ))}
+            <ShareButton
+              variant="menu-item"
+              onShare={() => {
+                setIsMenuOpen(false)
+                share()
+              }}
+            />
             {isBoardHome && (
               <Button
                 variant="outline"
@@ -127,6 +140,8 @@ export function Navbar() {
           </nav>
         </div>
       )}
+
+      {dialog}
     </header>
   )
 }

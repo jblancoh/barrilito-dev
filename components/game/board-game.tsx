@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useTheme } from "next-themes"
 import { parseStopHash, shouldSyncStopHash, withStopHash } from "@/lib/share"
 import { STOPS, type StopKey } from "./board-config"
-import { onBoardGoTo } from "./board-events"
+import { onBoardGoTo, shouldIgnoreBoardInput } from "./board-events"
 import type { BoardNav } from "./board-nav"
 import { HudStatus } from "./hud-status"
 import { SectionPanel } from "./section-panel"
@@ -26,6 +26,31 @@ function panelCanScroll(panel: HTMLDivElement | null, target: EventTarget | null
   if (!panel || !(target instanceof Node) || !panel.contains(target)) return false
   if (panel.scrollHeight <= panel.clientHeight + 2) return false
   return deltaY > 0 ? panel.scrollTop + panel.clientHeight < panel.scrollHeight - 2 : panel.scrollTop > 0
+}
+
+/**
+ * Whether any modal dialog (e.g. the share dialog) is currently open
+ * anywhere in the document — checked fresh at event time rather than
+ * cached, and deliberately DOM-based instead of coupling the board to any
+ * particular feature's React state.
+ */
+function isModalOpen(): boolean {
+  if (typeof document === "undefined") return false
+  return document.querySelector('[role="dialog"][data-state="open"]') !== null
+}
+
+/** Reads the bits of an event target that `shouldIgnoreBoardInput` needs. */
+function describeInputTarget(target: EventTarget | null): {
+  tag: string | null
+  isContentEditable: boolean
+  inDialog: boolean
+} {
+  if (!(target instanceof HTMLElement)) return { tag: null, isContentEditable: false, inDialog: false }
+  return {
+    tag: target.tagName,
+    isContentEditable: target.isContentEditable,
+    inDialog: target.closest('[role="dialog"]') !== null,
+  }
 }
 
 export interface BoardGameProps {
@@ -105,6 +130,10 @@ export function BoardGame({ onFallback }: BoardGameProps = {}) {
     let lastWheel = 0
 
     const onWheel = (e: WheelEvent) => {
+      const target = describeInputTarget(e.target)
+      if (shouldIgnoreBoardInput({ targetTag: target.tag, targetIsContentEditable: target.isContentEditable, targetInDialog: target.inDialog, modalOpen: isModalOpen() })) {
+        return
+      }
       if (panelCanScroll(panelRef.current, e.target, e.deltaY)) return
       e.preventDefault()
       const now = performance.now()
@@ -125,8 +154,10 @@ export function BoardGame({ onFallback }: BoardGameProps = {}) {
     }
 
     const onKey = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement | null)?.tagName
-      if (tag === "INPUT" || tag === "TEXTAREA") return
+      const target = describeInputTarget(e.target)
+      if (shouldIgnoreBoardInput({ targetTag: target.tag, targetIsContentEditable: target.isContentEditable, targetInDialog: target.inDialog, modalOpen: isModalOpen() })) {
+        return
+      }
       if (e.key === "ArrowDown" || e.key === "PageDown" || e.key === " ") {
         e.preventDefault()
         api.forward()
@@ -139,11 +170,23 @@ export function BoardGame({ onFallback }: BoardGameProps = {}) {
 
     let touchStartY = 0
     let touchStartTarget: EventTarget | null = null
+    // Only a gesture whose touchstart the board accepted may move it on touchend, so an
+    // ignored start (dialog open) can't pair with a later end using stale coordinates.
+    let touchTracked = false
     const onTouchStart = (e: TouchEvent) => {
+      const target = describeInputTarget(e.target)
+      touchTracked = !shouldIgnoreBoardInput({ targetTag: target.tag, targetIsContentEditable: target.isContentEditable, targetInDialog: target.inDialog, modalOpen: isModalOpen() })
+      if (!touchTracked) return
       touchStartY = e.touches[0].clientY
       touchStartTarget = e.target
     }
     const onTouchEnd = (e: TouchEvent) => {
+      if (!touchTracked) return
+      touchTracked = false
+      const target = describeInputTarget(e.target)
+      if (shouldIgnoreBoardInput({ targetTag: target.tag, targetIsContentEditable: target.isContentEditable, targetInDialog: target.inDialog, modalOpen: isModalOpen() })) {
+        return
+      }
       const dy = touchStartY - e.changedTouches[0].clientY
       const panel = panelRef.current
       if (
