@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react"
 import * as THREE from "three"
 import { toHslColor } from "./color"
+import { isModestDevice } from "./device-tier"
 import { shouldDegrade } from "./fps-watchdog"
 import {
   FACE_ROTATIONS,
@@ -560,6 +561,10 @@ const FPS_SAMPLE_WINDOW_MS = 3000
 const FPS_SAMPLE_MAX = 240
 /** If the scene never reaches `ready` within this long, treat it as a fatal failure. */
 const READY_TIMEOUT_MS = 8000
+/** Beyond this, extra device pixels cost more than they're worth visually. */
+const MAX_PIXEL_RATIO = 1.5
+const SHADOW_MAP_SIZE = 2048
+const SHADOW_MAP_SIZE_MODEST = 1024
 
 class BoardScene {
   private host: HTMLDivElement
@@ -682,15 +687,20 @@ class BoardScene {
       // Fonts may fail to load in some environments; textures still render with fallbacks.
     }
 
+    const modest = isModestDevice({
+      hardwareConcurrency: typeof navigator !== "undefined" ? navigator.hardwareConcurrency : undefined,
+      viewportWidth: this.host.clientWidth || window.innerWidth,
+    })
+
     let renderer: THREE.WebGLRenderer
     try {
-      renderer = this.renderer = new THREE.WebGLRenderer({ antialias: true })
+      renderer = this.renderer = new THREE.WebGLRenderer({ antialias: !modest })
     } catch (err) {
       console.error("[board-scene] renderer creation failed", err)
       this.reportError("renderer-failed")
       return
     }
-    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1))
+    renderer.setPixelRatio(Math.min(MAX_PIXEL_RATIO, window.devicePixelRatio || 1))
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
     renderer.domElement.style.cssText = "position:absolute;inset:0;width:100%;height:100%;display:block;"
@@ -709,7 +719,8 @@ class BoardScene {
     const sun = (this.sun = new THREE.DirectionalLight(0xffffff, 2.0))
     sun.position.set(4, 10, 6)
     sun.castShadow = true
-    sun.shadow.mapSize.set(2048, 2048)
+    const shadowMapSize = modest ? SHADOW_MAP_SIZE_MODEST : SHADOW_MAP_SIZE
+    sun.shadow.mapSize.set(shadowMapSize, shadowMapSize)
     Object.assign(sun.shadow.camera, { left: -7, right: 7, top: 7, bottom: -7, near: 1, far: 30 })
     sun.shadow.bias = -0.0006
     scene.add(sun)
@@ -735,6 +746,7 @@ class BoardScene {
     this.ro.observe(this.host)
     this.resize()
 
+    document.addEventListener("visibilitychange", this.onVisibilityChange)
     this.last = performance.now()
     this.loop()
     this.state.ready = true
@@ -742,6 +754,18 @@ class BoardScene {
     this.samplingActive = true
     this.samplingStartedAt = performance.now()
     this.samplingFrameTimes = []
+  }
+
+  /** Stops rendering while the tab is hidden and resumes cleanly when it's shown again. */
+  private onVisibilityChange = () => {
+    if (document.hidden) {
+      cancelAnimationFrame(this.raf)
+      this.raf = 0
+      return
+    }
+    if (this.raf) return // already running
+    this.last = performance.now()
+    this.loop()
   }
 
   private pos(square: number) {
@@ -1372,6 +1396,7 @@ class BoardScene {
     this.ro?.disconnect()
     this.reducedMotionQuery?.removeEventListener?.("change", this.onReducedMotionChange)
     this.renderer?.domElement.removeEventListener("webglcontextlost", this.onContextLost)
+    document.removeEventListener("visibilitychange", this.onVisibilityChange)
     if (!this.scene) return
     this.scene.traverse((obj) => {
       const mesh = obj as THREE.Mesh
