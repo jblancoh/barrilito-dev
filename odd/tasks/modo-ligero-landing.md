@@ -72,3 +72,16 @@ Forecast: ~450 authored changed lines.
 
 ## Next step
 All T1–T6 tasks complete. Remaining before merge: manual verification of the WebGL-failure fallback paths noted above; push/PR are the user's decision per the ask-on-risk delivery strategy.
+
+## Review (RDD)
+- Assessed 5c13f83..8053008: risk medium (877 lines, `.claude/launch.json` config change), `review_due` slice_budget_reached. Consent granted by user.
+- Lineage `review-200fe739bb51000f`: one lens (reliability) → approved; acknowledgement burned authority.
+- Advisory, non-blocking follow-ups:
+  - R3-001 (warning) 8s ready timeout starts before font loading in `init()`; a capable device on a slow network can be dropped to lite with reason `timeout`.
+  - R3-002 (warning) sr-only ClassicHome in full mode now renders interactive sections (contact form, buttons): hidden focusable elements and possible duplicate ids.
+  - R3-003 (suggestion) provider starts as `lite` → capable devices flash the classic home before the board; toggle shows "Ver en 3D" during detection.
+  - R3-004 (suggestion) no unit test for listener counting / DOM path of `navigateToStop`.
+- Note: `.claude/launch.json` was committed in d732aba (dev preview config) — keep or drop is the user's call.
+
+## Next step
+Decide whether to address R3-001/R3-002/R3-003 before opening a PR. Push/PR remain the user's decision.
