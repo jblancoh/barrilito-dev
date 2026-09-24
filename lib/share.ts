@@ -60,7 +60,9 @@ export function shouldSyncStopHash(input: {
 }): boolean {
   const current = parseStopHash(input.currentHash)
   if (current === input.stopKey) return false
-  if (input.currentHash === "" && input.onInitialStop) return false
+  // No stop hash yet (none at all, or a foreign fragment such as a skip link):
+  // leave the URL alone until the visitor actually moves off the initial stop.
+  if (current === null && input.onInitialStop) return false
   return true
 }
 

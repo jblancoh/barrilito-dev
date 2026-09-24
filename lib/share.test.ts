@@ -105,6 +105,15 @@ describe("shouldSyncStopHash", () => {
     expect(shouldSyncStopHash({ currentHash: "#skills", stopKey: "about", onInitialStop: true })).toBe(true)
   })
 
+  it("leaves a foreign fragment untouched while the board sits on its initial stop", () => {
+    expect(shouldSyncStopHash({ currentHash: "#main-content", stopKey: "about", onInitialStop: true })).toBe(false)
+    expect(shouldSyncStopHash({ currentHash: "#", stopKey: "about", onInitialStop: true })).toBe(false)
+  })
+
+  it("replaces a foreign fragment once the board moves off its initial stop", () => {
+    expect(shouldSyncStopHash({ currentHash: "#main-content", stopKey: "skills", onInitialStop: false })).toBe(true)
+  })
+
   it("skips the write when the hash already matches the stop", () => {
     expect(shouldSyncStopHash({ currentHash: "#projects", stopKey: "projects", onInitialStop: false })).toBe(false)
   })
