@@ -66,6 +66,20 @@ export function shouldSyncStopHash(input: {
   return true
 }
 
+/** Base file name (no extension) used for downloaded QR images. */
+const BASE_FILE_NAME = "barrilitodev"
+
+/**
+ * Builds the file name (without extension) for a downloaded QR image of
+ * `url`: `barrilitodev-<stopKey>` when the URL's hash matches a real board
+ * stop, or plain `barrilitodev` otherwise (no hash, or a foreign fragment).
+ * Callers append the extension (`.png`/`.svg`).
+ */
+export function shareFileName(url: string): string {
+  const stopKey = parseStopHash(new URL(url).hash)
+  return stopKey ? `${BASE_FILE_NAME}-${stopKey}` : BASE_FILE_NAME
+}
+
 export interface ShareEnv {
   /** Whether `navigator.share` exists in this browser. */
   hasNativeShare: boolean
