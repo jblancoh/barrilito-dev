@@ -7,13 +7,8 @@ import { onBoardGoTo } from "./board-events"
 import type { BoardNav } from "./board-nav"
 import { HudStatus } from "./hud-status"
 import { SectionPanel } from "./section-panel"
+import { renderSection } from "./section-registry"
 import { useBoardScene } from "./use-board-scene"
-import { AboutSection } from "./sections/about"
-import { SkillsSection } from "./sections/skills"
-import { ProjectsSection } from "./sections/projects"
-import { ServicesSection } from "./sections/services"
-import { ContactInfoSection } from "./sections/contact-info"
-import { ContactFormSection } from "./sections/contact-form"
 
 const CAMERA = "B" as const
 
@@ -23,9 +18,22 @@ function panelCanScroll(panel: HTMLDivElement | null, target: EventTarget | null
   return deltaY > 0 ? panel.scrollTop + panel.clientHeight < panel.scrollHeight - 2 : panel.scrollTop > 0
 }
 
-export function BoardGame() {
+export interface BoardGameProps {
+  /**
+   * Invoked when the board can't run (renderer/init failure, sustained low
+   * FPS, or a ready timeout — see use-board-scene.ts). HomeSwitch uses it
+   * to fall back to the classic home. Wired up in T4; harmless no-op until
+   * then.
+   */
+  onFallback?: (reason: string) => void
+}
+
+export function BoardGame({ onFallback }: BoardGameProps = {}) {
   const { resolvedTheme } = useTheme()
   const dark = resolvedTheme !== "light"
+
+  const onFallbackRef = useRef(onFallback)
+  onFallbackRef.current = onFallback
 
   const hostRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
@@ -164,21 +172,4 @@ export function BoardGame() {
       </SectionPanel>
     </div>
   )
-}
-
-function renderSection(key: StopKey, nav: BoardNav) {
-  switch (key) {
-    case "about":
-      return <AboutSection nav={nav} />
-    case "skills":
-      return <SkillsSection />
-    case "projects":
-      return <ProjectsSection nav={nav} />
-    case "services":
-      return <ServicesSection nav={nav} />
-    case "info":
-      return <ContactInfoSection nav={nav} />
-    case "contact":
-      return <ContactFormSection nav={nav} />
-  }
 }
