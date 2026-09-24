@@ -397,10 +397,18 @@ with it.
   (`declined_this_candidate`). No review record; delivery follows ordinary repository policy.
 
 ## Delivery slices (stacked-to-main)
-- PR1 deep link: `f65a194..2456022` — reviewed (`review-6c49f58b4b6311e3`).
-- PR2 share + QR: `2456022..74896e9` — reviewed (`review-658a0b7d7c0b22b6`).
-- PR3 link previews + fixes: `74896e9..HEAD` — under budget, not reviewed.
-Push and PR creation are the user's decision; resolve the `work-unit-commits`/`chained-pr` skills before opening PRs.
+PR2 of the original plan (~730 code lines) exceeded the 400-line budget, so one slicing pass split it at existing
+commit boundaries, and T2b moved to the deep-link PR it belongs to. Every boundary passes `pnpm test` and `tsc --noEmit`.
+
+| PR | Branch | Range | Code lines (with ODD log) | RDD |
+|----|--------|-------|---------------------------|-----|
+| [#4](https://github.com/jblancoh/barrilito-dev/pull/4) deep link | `claude/share-qr-01-deep-link` | `f65a194..c67e4f0` | 369 (533) | approved (`review-6c49f58b4b6311e3`; T2b in `review-658a0b7d7c0b22b6`) |
+| [#5](https://github.com/jblancoh/barrilito-dev/pull/5) QR rendering | `claude/share-qr-02-qr-render` | `c67e4f0..9030dac` | 128 | approved (`review-658a0b7d7c0b22b6`) |
+| [#6](https://github.com/jblancoh/barrilito-dev/pull/6) share dialog | `claude/share-qr-03-share-dialog` | `9030dac..5607375` | 324 | approved (`review-658a0b7d7c0b22b6`) |
+| [#7](https://github.com/jblancoh/barrilito-dev/pull/7) share button | `claude/share-qr-04-share-button` | `5607375..74896e9` | 244 (396) | approved (`review-658a0b7d7c0b22b6`) |
+| [#8](https://github.com/jblancoh/barrilito-dev/pull/8) link previews | `claude/page-share-qr-module-1f086f` | `74896e9..HEAD` | 303 (413+) | not reviewed |
+
+Merge in order; after each merge, retarget the next PR to `main`.
 
 ## Follow-ups (not in scope)
 - Tests for the DOM wiring: `isModalOpen`/`closest('[role="dialog"]')` board guard and `useShare` native → fallback paths (R3 advisories).
@@ -409,4 +417,4 @@ Push and PR creation are the user's decision; resolve the `work-unit-commits`/`c
 - Set `NEXT_PUBLIC_SITE_URL` in Vercel if the public domain differs from the project's production domain.
 
 ## Next step
-Feature complete. User decides push/PRs (stacked-to-main, 3 slices above).
+Feature complete; PRs #4 to #8 are open. Merging is the user's decision.
