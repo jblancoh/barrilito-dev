@@ -50,7 +50,7 @@ Slices (planned): PR1 deep link = T1–T2 · PR2 share + QR = T3–T5 · PR3 OG 
 - [x] T5b Board ignores input while a dialog is open; standalone SVG export — added from parent browser verification — route: delegated (same writer)
 - [x] T5c Touch guard symmetric: an ignored touchstart cannot pair with a later touchend (`4703ab4`) — added from RDD review R3 warning — route: inline (1 mechanical edit)
 - [x] T6 `metadataBase` + `openGraph`/`twitter` metadata and OG image — route: delegated (writer trigger: 3 new/changed non-trivial files)
-- [ ] T7 Browser verification: light/dark, 375px/desktop, `/#projects` in full and lite, QR scans, console clean — route: pending
+- [x] T7 Browser verification: light/dark, 375px/desktop, `/#projects` in full and lite, QR scans, console clean — route: inline (parent verification)
 
 ## Acceptance criteria
 - Opening `/#projects` starts the board at Projects (full) and scrolls to it (lite).
@@ -346,6 +346,26 @@ with it.
   localhost fallback, since no `NEXT_PUBLIC_SITE_URL`/`VERCEL_*` env vars are set locally — expected).
   `curl -sI http://localhost:3100/opengraph-image` and `.../twitter-image` both `HTTP/1.1 200 OK`,
   `content-type: image/png`.
+
+### T7 — final verification (parent, inline)
+- Parent fixes found during verification:
+  - `a76b28c fix(seo): keep the og logo visible on the dark card` — the black line-art logo was nearly invisible on the
+    dark OG card; now on a white badge. Checked by rendering `/opengraph-image` (200, `image/png`, 1200×630).
+  - `eb94a76 fix(share): return focus to the share trigger when the dialog closes` — Esc left focus on `BODY` because the
+    dialog is opened programmatically (no `DialogTrigger`); `useShare` now remembers the trigger and restores it via
+    `onCloseAutoFocus` (falls back to Radix default when the trigger is gone, e.g. the closed mobile menu).
+- Browser (dev server, fresh load, console clean after marker):
+  - Dark theme, `/?mode=full#contact`: board at CASILLA 25; dialog input `http://localhost:3000/#contact` (mode stripped);
+    QR box `rgb(255,255,255)`; `BarcodeDetector` decodes the QR to `http://localhost:3000/#contact`.
+  - Light theme, `/?t=7#skills`: board at CASILLA 06; QR decodes to `http://localhost:3000/?t=7#skills`; Esc closes the
+    dialog and focus returns to "Compartir".
+  - Earlier checks (T2, T5b): hash-less load stays clean, replaceState keeps `history.length`, lite deep link scrolls,
+    board ignores keys behind the dialog, mobile menu opens the dialog, 375px without horizontal scroll, PNG 1024×1024.
+  - Head: `og:title`, `og:image`, `twitter:card=summary_large_image`, `twitter:image` present.
+- Final checks: `pnpm test` 108/108; `npx tsc --noEmit` clean; `pnpm lint` 0 errors (pre-existing `<img>` warnings only);
+  `pnpm build` green — `/` 106 kB First Load JS, `/opengraph-image` and `/twitter-image` static.
+- Not verified here: a real phone's native share sheet (this browser has no `navigator.share`); scanning with a physical
+  phone camera (decoded with `BarcodeDetector` instead).
 
 ## Review (RDD)
 - Slice PR1 range `f65a194..2456022` (includes `2456022 chore: ignore gentle-ai skill registry cache`, added so
