@@ -29,6 +29,12 @@ const COPY_FEEDBACK_MS = 2000
 /** Square canvas/export size for the downloaded PNG, in pixels. */
 const PNG_EXPORT_SIZE = 1024
 
+/** Fixed `width`/`height` baked into the standalone downloaded SVG, in pixels. */
+const SVG_EXPORT_SIZE = 512
+
+/** Delay before revoking a download's object URL: revoking it synchronously, right after `click()`, cancels the download in some browsers. */
+const REVOKE_URL_DELAY_MS = 100
+
 /** Triggers a browser download of `blob` as `fileName`, cleaning up its object URL. */
 function downloadBlob(blob: Blob, fileName: string) {
   const objectUrl = URL.createObjectURL(blob)
@@ -36,7 +42,7 @@ function downloadBlob(blob: Blob, fileName: string) {
   anchor.href = objectUrl
   anchor.download = fileName
   anchor.click()
-  URL.revokeObjectURL(objectUrl)
+  setTimeout(() => URL.revokeObjectURL(objectUrl), REVOKE_URL_DELAY_MS)
 }
 
 /**
@@ -75,12 +81,19 @@ export function ShareDialog({ open, onOpenChange, url }: ShareDialogProps) {
     }
   }
 
-  /** Serializes the rendered QR `<svg>` into a standalone, namespaced markup string. */
+  /**
+   * Serializes the rendered QR `<svg>` into a standalone, namespaced markup
+   * string: explicit `width`/`height` (some apps size an SVG oddly without
+   * them) and no Tailwind `class`, which means nothing outside this page.
+   */
   const serializeQrSvg = (): string | null => {
     const svg = svgRef.current
     if (!svg) return null
     const clone = svg.cloneNode(true) as SVGSVGElement
     clone.setAttribute("xmlns", "http://www.w3.org/2000/svg")
+    clone.setAttribute("width", String(SVG_EXPORT_SIZE))
+    clone.setAttribute("height", String(SVG_EXPORT_SIZE))
+    clone.removeAttribute("class")
     return new XMLSerializer().serializeToString(clone)
   }
 
