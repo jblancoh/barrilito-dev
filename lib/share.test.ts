@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { buildShareUrl, getShareStrategy, parseStopHash } from "./share"
+import { buildShareUrl, getShareStrategy, parseStopHash, withStopHash } from "./share"
 
 describe("parseStopHash", () => {
   it("accepts a hash with the leading '#'", () => {
@@ -57,6 +57,20 @@ describe("buildShareUrl", () => {
 
   it("removes mode and keeps the hash together", () => {
     expect(buildShareUrl("https://example.com/?mode=lite#skills")).toBe("https://example.com/#skills")
+  })
+})
+
+describe("withStopHash", () => {
+  it("replaces an existing hash with the given stop key", () => {
+    expect(withStopHash("https://example.com/path?x=1#old", "projects")).toBe("/path?x=1#projects")
+  })
+
+  it("adds a hash to a URL that had none", () => {
+    expect(withStopHash("https://example.com/path", "contact")).toBe("/path#contact")
+  })
+
+  it("keeps the pathname and query string exactly as they were", () => {
+    expect(withStopHash("https://example.com/", "about")).toBe("/#about")
   })
 })
 

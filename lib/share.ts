@@ -35,6 +35,18 @@ export function buildShareUrl(href: string): string {
   return url.toString()
 }
 
+/**
+ * Builds the pathname + search + hash to write into the address bar when
+ * the board (or the classic home's navbar) moves to a different stop.
+ * Keeps everything about the current URL except the hash, which becomes
+ * `#<stopKey>`. Callers pass this to `history.replaceState` — never
+ * `pushState` — so moving through stops doesn't spam browser history.
+ */
+export function withStopHash(href: string, stopKey: StopKey): string {
+  const url = new URL(href)
+  return `${url.pathname}${url.search}#${stopKey}`
+}
+
 export interface ShareEnv {
   /** Whether `navigator.share` exists in this browser. */
   hasNativeShare: boolean

@@ -1,5 +1,10 @@
+"use client"
+
+import { useEffect } from "react"
+import { parseStopHash } from "@/lib/share"
 import { LADDERS, SNAKES, STOPS, type StopKey } from "./board-config"
 import type { BoardNav } from "./board-nav"
+import { prefersReducedMotion } from "./board-events"
 import { renderSection } from "./section-registry"
 
 function scrollToStop(key: StopKey): void {
@@ -35,6 +40,19 @@ export interface ClassicHomeProps {
  * readers and lite-mode visitors actually get.
  */
 export function ClassicHome({ visible = false }: ClassicHomeProps) {
+  // The classic layout's sections only exist with real dimensions once this component
+  // renders visible (HomeSwitch decides the mode after mount), so the browser's native
+  // scroll-to-anchor may already have fired and missed. Scroll to the deep-linked stop
+  // ourselves once it's actually there.
+  useEffect(() => {
+    if (!visible || typeof window === "undefined") return
+    const stopKey = parseStopHash(window.location.hash)
+    if (!stopKey) return
+    document
+      .getElementById(stopKey)
+      ?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" })
+  }, [visible])
+
   return (
     <div className={visible ? "container mx-auto flex flex-col gap-20 pb-24 pt-24" : "sr-only"}>
       {STOPS.map((stop) => (

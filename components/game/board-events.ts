@@ -1,3 +1,4 @@
+import { withStopHash } from "../../lib/share"
 import type { StopKey } from "./board-config"
 
 /**
@@ -58,7 +59,8 @@ export function decideNavigation(
   return { kind: "scroll", stopKey, behavior: reducedMotion ? "auto" : "smooth" }
 }
 
-function prefersReducedMotion(): boolean {
+/** Exported so other DOM edges (e.g. the classic home's initial-scroll effect) apply the same rule. */
+export function prefersReducedMotion(): boolean {
   return typeof window !== "undefined" && typeof window.matchMedia === "function"
     ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
     : false
@@ -75,6 +77,9 @@ export function navigateToStop(stopKey: StopKey): void {
   if (action.kind === "dispatch") {
     dispatchBoardGoTo(action.stopKey)
     return
+  }
+  if (typeof window !== "undefined") {
+    window.history.replaceState(window.history.state, "", withStopHash(window.location.href, action.stopKey))
   }
   if (typeof document === "undefined") return
   document.getElementById(action.stopKey)?.scrollIntoView({ behavior: action.behavior, block: "start" })

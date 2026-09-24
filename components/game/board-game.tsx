@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useTheme } from "next-themes"
+import { parseStopHash, withStopHash } from "@/lib/share"
 import { STOPS, type StopKey } from "./board-config"
 import { onBoardGoTo } from "./board-events"
 import type { BoardNav } from "./board-nav"
@@ -9,6 +10,15 @@ import { HudStatus } from "./hud-status"
 import { SectionPanel } from "./section-panel"
 import { renderSection } from "./section-registry"
 import { useBoardScene } from "./use-board-scene"
+
+/** STOPS index matching `location.hash` at mount time, or 0 (the default stop) when absent/invalid. */
+function initialStopIndexFromHash(): number {
+  if (typeof window === "undefined") return 0
+  const stopKey = parseStopHash(window.location.hash)
+  if (!stopKey) return 0
+  const index = STOPS.findIndex((s) => s.key === stopKey)
+  return index >= 0 ? index : 0
+}
 
 const CAMERA = "B" as const
 
@@ -38,11 +48,16 @@ export function BoardGame({ onFallback }: BoardGameProps = {}) {
   const hostRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
 
+  // Read once at mount: a deep-linked hash (e.g. "/#projects") places the board directly
+  // on that stop, with no animated walk and no dice roll (see use-board-scene.ts).
+  const [initialStopIndex] = useState(initialStopIndexFromHash)
+
   const { api, state, layout } = useBoardScene(hostRef, {
     dark,
     camera: CAMERA,
     speed: 1,
     confetti: true,
+    initialStopIndex,
     onFallback: (reason: string) => onFallbackRef.current?.(reason),
     onArrive: () => {
       if (panelRef.current) panelRef.current.scrollTop = 0
@@ -62,6 +77,30 @@ export function BoardGame({ onFallback }: BoardGameProps = {}) {
 
   // Navbar (rendered above the board in app/layout.tsx) asks us to goTo a stop.
   useEffect(() => onBoardGoTo(({ stopKey }) => nav.goTo(stopKey)), [nav])
+
+  // Keep the address bar's hash in sync with the current stop, via replaceState (never
+  // pushState, so moving through the board doesn't spam history). Skips the very first run
+  // so mounting doesn't add a hash when the page loaded without one.
+  const skipNextHashSync = useRef(true)
+  useEffect(() => {
+    if (skipNextHashSync.current) {
+      skipNextHashSync.current = false
+      return
+    }
+    const stopKey = STOPS[state.stop]?.key
+    if (!stopKey) return
+    window.history.replaceState(window.history.state, "", withStopHash(window.location.href, stopKey))
+  }, [state.stop])
+
+  // The user edited or pasted a new hash (e.g. "#projects"): move the board there.
+  useEffect(() => {
+    const onHashChange = () => {
+      const stopKey = parseStopHash(window.location.hash)
+      if (stopKey) nav.goTo(stopKey)
+    }
+    window.addEventListener("hashchange", onHashChange)
+    return () => window.removeEventListener("hashchange", onHashChange)
+  }, [nav])
 
   // Wheel / keyboard / touch input, mirroring the design reference exactly.
   useEffect(() => {
