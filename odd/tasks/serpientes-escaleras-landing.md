@@ -29,7 +29,7 @@ Strategy: single branch, work-unit commits, push (user request). No PR requested
 
 ## Tasks
 - [x] T1 Foundations: deps, vitest, Tailwind chart5, Geist Mono, `lib/content.ts`, `board-config.ts` + pure path logic with tests — route: delegated (writer trigger, 2+ files)
-- [ ] T2 three.js scene hook `use-board-scene.ts` (board, tiles, ladders, snakes, token, die, cameras A/B, anim queue, theme, dispose) — route: delegated
+- [x] T2 three.js scene hook `use-board-scene.ts` (board, tiles, ladders, snakes, token, die, cameras A/B, anim queue, theme, dispose) — route: delegated
 - [ ] T3 Overlay UI + wiring: board-game, HUD, stop rail, section panel + 6 sections, input (wheel/keys/touch/goTo), navbar overlay, page/layout, loading, reduced motion, SEO fallback — route: delegated
 - [ ] T4 Verification: `pnpm test`, `pnpm lint`, `pnpm build`, browser check of both themes — route: inline + delegated
 
@@ -57,5 +57,23 @@ Commit `6e8a057` "feat(game): add board config and pure path logic".
 - Verification: `pnpm test` 26 passed; `pnpm lint` only pre-existing `no-img-element` warnings, no errors;
   `pnpm build` compiled successfully (`✓ Compiled successfully`, 5 static pages).
 
+### T2 Scene — done
+Commit `5ed1981` "feat(game): add three.js board scene".
+- `components/game/use-board-scene.ts`: `BoardScene` class (renderer antialias/DPR≤2/PCFSoft, hemi+directional
+  lights, 80×80 shadow ground, slab, 25 canvas-textured tiles, ladders as cylinder rungs, snakes as tapered
+  vertex-colored tubes with bobbing head/tongue, barrel token with atom+glow sprite, 6-face canvas die),
+  animation queue (roll/hop/ladder-climb/snake-slide/arrive), ripple + confetti fx, cameras A (ortho iso) and
+  B (perspective token cam, default) with panel-aware look-target shift, `applyTheme(dark)` reading live CSS
+  variables via `getComputedStyle` (no hardcoded palette table), resize via `ResizeObserver`, prefers-reduced-motion
+  handling (clamped near-instant durations, no arcs/spins, confetti skipped), and `dispose()` walking the scene
+  graph to free geometries/materials/textures + renderer + observers.
+- Thin `useBoardScene(hostRef, options)` React hook wraps the class, exposing `{ api: {forward, back, goTo,
+  shortcut, isBusy, getLockUntil}, state, layout }`.
+- Deviation from README: glow sprite gradient and die's destructive pip color are generated from the live
+  palette instead of the prototype's hardcoded hsla literals, so they react to the actual active CSS variables
+  (same visual colors, just theme-reactive) — required by the task's "read theme colors from CSS variables" guidance.
+- Verification: `pnpm exec tsc --noEmit` clean; `pnpm test` 26 passed (unchanged); `pnpm lint` only the pre-existing
+  `no-img-element` warnings; `pnpm build` compiled successfully, 5 static pages (scene not yet wired into a page).
+
 ## Next step
-T2 — three.js scene hook (`use-board-scene.ts`).
+T3 — overlay UI + wiring (`board-game.tsx`, HUD, section panel, sections, page/layout).
