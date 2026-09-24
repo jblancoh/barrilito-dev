@@ -161,4 +161,4 @@ Slices (planned): PR1 deep link = T1–T2 · PR2 share + QR = T3–T5 · PR3 OG 
 - Note: the T2 entry above describing a "skip the first effect run" ref is superseded by `d8ecd27`.
 
 ## Next step
-T3 (slice PR2).
+T3 (slice PR2). T2b range `2456022..e21e46d` assessed medium, under_budget (62 lines): pending in slice PR2 review.
