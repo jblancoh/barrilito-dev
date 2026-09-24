@@ -1,16 +1,15 @@
-import { HeroSection } from "@/components/hero-section"
-import { ProjectsSection } from "@/components/projects-section"
-import { SkillsSection } from "@/components/skills-section"
-import { ContactSection } from "@/components/contact-section"
+import dynamic from "next/dynamic"
+import { SeoFallback } from "@/components/game/seo-fallback"
+
+const BoardGame = dynamic(() => import("@/components/game/board-game").then((m) => m.BoardGame), {
+  ssr: false,
+})
 
 export default function Home() {
   return (
-    <div className="container mx-auto px-4">
-      <HeroSection />
-      <SkillsSection />
-      <ProjectsSection />
-      <ContactSection />
-    </div>
+    <>
+      <SeoFallback />
+      <BoardGame />
+    </>
   )
 }
-

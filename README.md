@@ -20,6 +20,20 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Snakes & Ladders landing
+
+The home page (`/`) is a full-viewport, game-like landing: an isometric 3D Snakes & Ladders
+board (three.js) where each scroll tick, key press, swipe, or nav click rolls the die and hops
+the barrel token to the next section's square, revealing that section's content in an overlay
+panel. Ladders shortcut to Contact; snakes send you back to Projects or About. See
+`components/game/` for the board config/path logic (`board-config.ts`), the three.js scene hook
+(`use-board-scene.ts`), and the overlay UI (`board-game.tsx` and friends). The board is loaded
+client-only (`next/dynamic(..., { ssr: false })`); `components/game/seo-fallback.tsx` renders
+the same section content server-side as visually hidden markup for SEO.
+
+Run `pnpm test` to run the unit tests (`vitest`) covering the pure board configuration and
+path-planning logic in `components/game/board-config.ts`.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

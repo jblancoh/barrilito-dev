@@ -1,12 +1,19 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
+import localFont from "next/font/local"
 import "./globals.css"
 import { Navbar } from "@/components/navbar"
-import { Footer } from "@/components/footer"
+import { SiteChrome } from "@/components/site-chrome"
 import { ThemeProvider } from "@/components/theme-provider"
 
 const inter = Inter({ subsets: ["latin"] })
+const geistMono = localFont({
+  src: "./fonts/GeistMonoVF.woff",
+  variable: "--font-geist-mono",
+  weight: "100 900",
+  display: "swap",
+})
 
 export const metadata: Metadata = {
   title: "BarrilitoDev | Desarrollo Web & React",
@@ -21,15 +28,10 @@ export default function RootLayout({
 
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${inter.className} ${geistMono.variable}`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <div className="container mx-auto">
-            <div className="flex min-h-screen flex-col">
-              <Navbar />
-              <main className="flex-1">{children}</main>
-              <Footer />
-            </div>
-          </div>
+          <Navbar />
+          <SiteChrome>{children}</SiteChrome>
         </ThemeProvider>
       </body>
     </html>
