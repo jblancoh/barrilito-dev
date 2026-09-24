@@ -51,6 +51,12 @@ export interface UseBoardSceneOptions {
   speed?: number
   /** Whether the META arrival should trigger confetti (default true). */
   confetti?: boolean
+  /**
+   * STOPS index the board should start on, placed directly with no
+   * animated walk and no dice roll (default 0). Used to deep-link into a
+   * stop from the URL hash — see board-game.tsx.
+   */
+  initialStopIndex?: number
   /** Called after the arrival animation settles on a new stop (e.g. to reset panel scroll). */
   onArrive?: () => void
   /**
@@ -549,11 +555,19 @@ interface BoardSceneOpts {
   camera: CameraMode
   speed: number
   confetti: boolean
+  /** STOPS index to place the token on at construction time (default 0), clamped to a valid index. */
+  initialStopIndex?: number
   onState: (state: BoardSceneState) => void
   onLayout: (layout: BoardSceneLayout) => void
   onArrive?: () => void
   /** Reports a fatal or degraded condition; the hook forwards this to `onFallback` at most once. */
   onError: (reason: string) => void
+}
+
+/** Clamps a requested initial stop index to a valid STOPS index, defaulting to 0. */
+function clampStopIndex(index: number | undefined): number {
+  if (index === undefined || Number.isNaN(index)) return 0
+  return Math.min(Math.max(index, 0), STOPS.length - 1)
 }
 
 /** How long after render-loop start the FPS watchdog samples frames before judging. */
@@ -621,13 +635,13 @@ class BoardScene {
   private samplingStartedAt = 0
   private errorReported = false
 
-  private state = {
-    stop: 0,
-    sq: 1,
-    moving: false,
-    rolling: false,
-    roll: null as number | null,
-    ready: false,
+  private state: {
+    stop: number
+    sq: number
+    moving: boolean
+    rolling: boolean
+    roll: number | null
+    ready: boolean
   }
 
   constructor(private opts: BoardSceneOpts) {
@@ -636,6 +650,15 @@ class BoardScene {
     this.cameraMode = opts.camera
     this.speed = clamp(opts.speed, 0.5, 2)
     this.confettiEnabled = opts.confetti
+    const initialStopIndex = clampStopIndex(opts.initialStopIndex)
+    this.state = {
+      stop: initialStopIndex,
+      sq: STOPS[initialStopIndex].sq,
+      moving: false,
+      rolling: false,
+      roll: null,
+      ready: false,
+    }
     this.reducedMotion =
       typeof window !== "undefined" && window.matchMedia
         ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -738,8 +761,10 @@ class BoardScene {
     this.buildDie()
     this.applyTheme(this.dark)
 
-    this.token.position.copy(this.tokenAt(1))
-    this.die.position.copy(this.dieRest(1))
+    // Placed directly at the (possibly deep-linked) initial stop's square — no animated
+    // walk from square 1 and no dice roll, matching the state set in the constructor.
+    this.token.position.copy(this.tokenAt(this.state.sq))
+    this.die.position.copy(this.dieRest(this.state.sq))
     this.die.rotation.set(0, 0.6, 0)
 
     this.ro = new ResizeObserver(() => this.resize())
@@ -1425,14 +1450,17 @@ export function useBoardScene(
   hostRef: RefObject<HTMLDivElement | null>,
   options: UseBoardSceneOptions,
 ): UseBoardSceneResult {
-  const [state, setState] = useState<BoardSceneState>({
-    stop: 0,
-    sq: 1,
-    moving: false,
-    rolling: false,
-    roll: null,
-    statusText: "Tu turno",
-    ready: false,
+  const [state, setState] = useState<BoardSceneState>(() => {
+    const stopIndex = clampStopIndex(options.initialStopIndex)
+    return {
+      stop: stopIndex,
+      sq: STOPS[stopIndex].sq,
+      moving: false,
+      rolling: false,
+      roll: null,
+      statusText: "Tu turno",
+      ready: false,
+    }
   })
   const [layout, setLayout] = useState<BoardSceneLayout>({
     narrow: false,
@@ -1464,6 +1492,7 @@ export function useBoardScene(
       camera: optionsRef.current.camera ?? "B",
       speed: optionsRef.current.speed ?? 1,
       confetti: optionsRef.current.confetti ?? true,
+      initialStopIndex: optionsRef.current.initialStopIndex,
       onState: setState,
       onLayout: setLayout,
       onArrive: () => optionsRef.current.onArrive?.(),
