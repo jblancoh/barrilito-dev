@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { buildShareUrl, getShareStrategy, parseStopHash, withStopHash } from "./share"
+import { buildShareUrl, getShareStrategy, parseStopHash, shouldSyncStopHash, withStopHash } from "./share"
 
 describe("parseStopHash", () => {
   it("accepts a hash with the leading '#'", () => {
@@ -89,5 +89,23 @@ describe("getShareStrategy", () => {
 
   it("falls back to the dialog when neither is available", () => {
     expect(getShareStrategy({ hasNativeShare: false, isCoarsePointer: false })).toBe("dialog")
+  })
+})
+
+describe("shouldSyncStopHash", () => {
+  it("does not add a hash while the board sits on its initial stop and the URL has none", () => {
+    expect(shouldSyncStopHash({ currentHash: "", stopKey: "about", onInitialStop: true })).toBe(false)
+  })
+
+  it("syncs once the board leaves the initial stop", () => {
+    expect(shouldSyncStopHash({ currentHash: "", stopKey: "skills", onInitialStop: false })).toBe(true)
+  })
+
+  it("syncs when returning to the initial stop after the URL already carries a hash", () => {
+    expect(shouldSyncStopHash({ currentHash: "#skills", stopKey: "about", onInitialStop: true })).toBe(true)
+  })
+
+  it("skips the write when the hash already matches the stop", () => {
+    expect(shouldSyncStopHash({ currentHash: "#projects", stopKey: "projects", onInitialStop: false })).toBe(false)
   })
 })

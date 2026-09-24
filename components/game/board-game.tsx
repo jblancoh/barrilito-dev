@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useTheme } from "next-themes"
-import { parseStopHash, withStopHash } from "@/lib/share"
+import { parseStopHash, shouldSyncStopHash, withStopHash } from "@/lib/share"
 import { STOPS, type StopKey } from "./board-config"
 import { onBoardGoTo } from "./board-events"
 import type { BoardNav } from "./board-nav"
@@ -79,18 +79,15 @@ export function BoardGame({ onFallback }: BoardGameProps = {}) {
   useEffect(() => onBoardGoTo(({ stopKey }) => nav.goTo(stopKey)), [nav])
 
   // Keep the address bar's hash in sync with the current stop, via replaceState (never
-  // pushState, so moving through the board doesn't spam history). Skips the very first run
-  // so mounting doesn't add a hash when the page loaded without one.
-  const skipNextHashSync = useRef(true)
+  // pushState, so moving through the board doesn't spam history). Mounting on the initial
+  // stop of a hash-less URL leaves the address bar untouched (see shouldSyncStopHash).
   useEffect(() => {
-    if (skipNextHashSync.current) {
-      skipNextHashSync.current = false
-      return
-    }
     const stopKey = STOPS[state.stop]?.key
     if (!stopKey) return
+    const onInitialStop = state.stop === initialStopIndex
+    if (!shouldSyncStopHash({ currentHash: window.location.hash, stopKey, onInitialStop })) return
     window.history.replaceState(window.history.state, "", withStopHash(window.location.href, stopKey))
-  }, [state.stop])
+  }, [state.stop, initialStopIndex])
 
   // The user edited or pasted a new hash (e.g. "#projects"): move the board there.
   useEffect(() => {

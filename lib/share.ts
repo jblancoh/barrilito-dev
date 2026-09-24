@@ -47,6 +47,23 @@ export function withStopHash(href: string, stopKey: StopKey): string {
   return `${url.pathname}${url.search}#${stopKey}`
 }
 
+/**
+ * Decides whether the board should write `#<stopKey>` into the address bar.
+ * Derived from the URL itself rather than a "first run" ref, so React
+ * StrictMode's double-invoked effects in development can't add a hash on a
+ * page that loaded without one.
+ */
+export function shouldSyncStopHash(input: {
+  currentHash: string
+  stopKey: StopKey
+  onInitialStop: boolean
+}): boolean {
+  const current = parseStopHash(input.currentHash)
+  if (current === input.stopKey) return false
+  if (input.currentHash === "" && input.onInitialStop) return false
+  return true
+}
+
 export interface ShareEnv {
   /** Whether `navigator.share` exists in this browser. */
   hasNativeShare: boolean
