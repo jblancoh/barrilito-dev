@@ -22,6 +22,9 @@ previews in chat apps are poor.
 
 ## Constraints
 - Next.js 14 App Router, React 18, Tailwind 3, shadcn/ui, pnpm. Theme tokens only.
+- If a custom domain differs from the Vercel project's own production domain, set
+  `NEXT_PUBLIC_SITE_URL` in Vercel (Project Settings → Environment Variables) so `metadataBase`
+  and the OG/Twitter image URLs resolve to the real public domain instead of the Vercel-assigned one.
 - Use `#hash`, not `?stop=`: lite mode already renders `<section id={stopKey}>`, and the page stays static.
 - `history.replaceState`, never `pushState` (no history spam); unknown hashes are ignored.
 - QR is always dark-on-light, including dark mode (scanner reliability). Generated client-side, no network.
@@ -41,11 +44,13 @@ Slices (planned): PR1 deep link = T1–T2 · PR2 share + QR = T3–T5 · PR3 OG 
 - [x] T1 `lib/share.ts`: `buildShareUrl`, `getShareStrategy`, `parseStopHash` with vitest (RED→GREEN) — route: delegated (writer trigger: 2+ files, preparation reading)
 - [x] T2 Board deep link: initial stop from `location.hash`, `replaceState` on stop change, invalid hash ignored; verify lite `/#projects` — route: delegated (same writer as T1)
 - [x] T2b Keep foreign fragments (skip links, auth callbacks) intact on mount; test `navigateToStop` replaceState — added from RDD review R3 advisories — route: inline (2 small, understood files)
-- [ ] T3 `qrcode` dependency + `<ShareQr>` SVG (dark-on-light) with tests for the QR options helper — route: pending
-- [ ] T4 shadcn `dialog` + `<ShareDialog>`: copy link with feedback, download QR (PNG/SVG), a11y — route: pending
-- [ ] T5 `<ShareButton>` in navbar desktop + mobile menu; native share when available, dialog otherwise — route: pending
-- [ ] T6 `metadataBase` + `openGraph`/`twitter` metadata and OG image — route: pending
-- [ ] T7 Browser verification: light/dark, 375px/desktop, `/#projects` in full and lite, QR scans, console clean — route: pending
+- [x] T3 `qrcode` dependency + `<ShareQr>` SVG (dark-on-light) with tests for the QR options helper — route: delegated (writer trigger: 2+ non-trivial files)
+- [x] T4 shadcn `dialog` + `<ShareDialog>`: copy link with feedback, download QR (PNG/SVG), a11y — route: delegated (writer trigger: 2+ non-trivial files)
+- [x] T5 `<ShareButton>` in navbar desktop + mobile menu; native share when available, dialog otherwise — route: delegated (writer trigger: 2+ non-trivial files)
+- [x] T5b Board ignores input while a dialog is open; standalone SVG export — added from parent browser verification — route: delegated (same writer)
+- [x] T5c Touch guard symmetric: an ignored touchstart cannot pair with a later touchend (`4703ab4`) — added from RDD review R3 warning — route: inline (1 mechanical edit)
+- [x] T6 `metadataBase` + `openGraph`/`twitter` metadata and OG image — route: delegated (writer trigger: 3 new/changed non-trivial files)
+- [x] T7 Browser verification: light/dark, 375px/desktop, `/#projects` in full and lite, QR scans, console clean — route: inline (parent verification)
 
 ## Acceptance criteria
 - Opening `/#projects` starts the board at Projects (full) and scrolls to it (lite).
@@ -148,6 +153,220 @@ Slices (planned): PR1 deep link = T1–T2 · PR2 share + QR = T3–T5 · PR3 OG 
   `/?mode=lite#projects`, pushState never) passed on first run — characterization of existing behavior.
 - GREEN: `current === null && onInitialStop` → no write; `81 passed (81)`. `tsc --noEmit` clean; `pnpm lint` 0 errors.
 
+### T3 — QR rendering (`9030dac feat(share): render qr codes as theme-independent svg`)
+- `pnpm add qrcode` + `pnpm add -D @types/qrcode`. New pure helper `lib/qr.ts`:
+  `buildQrMatrixPath(value)` calls `QRCode.create(value, { errorCorrectionLevel: "M" })` and
+  walks its `BitMatrix` (`modules.get(row, col)`) into an SVG path `d` string of 1×1 squares, each
+  offset by a 4-module quiet zone; also exports the fixed `QR_DARK`/`QR_LIGHT` colors.
+- RED: `pnpm test -- lib/qr.test.ts` → `Error: Cannot find module './qr' imported from
+  .../lib/qr.test.ts` (test file written first).
+- GREEN: after implementing `buildQrMatrixPath` — `86 passed (86)` (81 pre-existing + 5 new).
+- `components/share/share-qr.tsx`: `forwardRef<SVGSVGElement, ...>` renders
+  `<svg viewBox="0 0 N N" role="img" aria-label=… shapeRendering="crispEdges">` with a `QR_LIGHT`
+  background `<rect>` and a `QR_DARK` `<path>` — no `dangerouslySetInnerHTML`. Always dark-on-light
+  even in dark mode (scanner reliability), commented in both `lib/qr.ts` and the component as a
+  deliberate exception to "theme tokens only".
+- Deviation: the test asserting the quiet zone uses `Array.from(path.matchAll(...))` instead of
+  `[...path.matchAll(...)]` — this tsconfig has no explicit `target`, so spread-iterating a
+  `RegExpStringIterator` fails `tsc --noEmit` with TS2802 (needs `--downlevelIteration` or
+  ES2015+ target); `Array.from` over the same iterable compiles cleanly under any target.
+
+### T4 — Share dialog (`5607375 feat(share): add share dialog with copy and download`)
+- `pnpm add @radix-ui/react-dialog`. New pure helper `shareFileName(url)` in `lib/share.ts`:
+  `barrilitodev-<stopKey>` when the URL's hash matches a real stop (via `parseStopHash`), else
+  plain `barrilitodev`.
+  - RED: `pnpm test -- lib/share.test.ts` → `4 failed | 86 passed (90)`, all
+    `TypeError: shareFileName is not a function`.
+  - GREEN: `90 passed (90)`.
+- `components/ui/dialog.tsx`: standard shadcn/ui dialog primitives (`Dialog`, `DialogTrigger`,
+  `DialogPortal`, `DialogOverlay`, `DialogClose`, `DialogContent` with a lucide `X` close button
+  and sr-only "Cerrar", `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription`) built on
+  `@radix-ui/react-dialog`, `cn` and `tailwindcss-animate` — not run through the shadcn CLI.
+- `components/share/share-dialog.tsx` (`ShareDialog({ open, onOpenChange, url })`): title
+  "Compartir esta página" + description; `<ShareQr>` in a white rounded padded box sized `h-52 w-52`
+  (fits comfortably inside the dialog's `w-[calc(100%-2rem)] max-w-sm` at 375px); read-only `Input`
+  with the URL + "Copiar enlace" using `navigator.clipboard.writeText`, "¡Enlace copiado!" feedback
+  for 2s through an `aria-live="polite"` region, falling back to `input.select()` +
+  "Copia el enlace manualmente" when the Clipboard API is missing or the write rejects;
+  "Descargar PNG"/"Descargar SVG" (`XMLSerializer` + namespaced clone for SVG; an offscreen
+  `Image` + 1024×1024 `<canvas>` + `toBlob` for PNG; every `URL.createObjectURL` is revoked after
+  use); "Más opciones" shown only when `navigator.share` exists, calling
+  `navigator.share({ title: document.title, url })` and ignoring `AbortError`.
+
+### T5 — Share button (`4b1fcbd feat(share): add share button to the navbar`)
+- `components/share/share-button.tsx`: on click, `url = buildShareUrl(window.location.href)` read
+  at click time (so it includes the current `#stop`), then
+  `getShareStrategy({ hasNativeShare: typeof navigator.share === "function", isCoarsePointer:
+  window.matchMedia("(pointer: coarse)").matches })`. `"native"` calls `navigator.share`, ignores
+  `AbortError`, and falls back to the dialog on any other error; `"dialog"` opens it directly.
+  `ShareDialog` is loaded via `next/dynamic(..., { ssr: false })` and only mounted after the first
+  open (`hasOpenedDialog` state), so its chunk (qrcode + Radix Dialog) is fetched on demand, not on
+  page load.
+- One component serves both navbar surfaces via a `variant` prop: `"icon"` renders the
+  `Share2`/ghost/icon button (`aria-label`/`title="Compartir"`) placed next to `ModeToggle` in the
+  desktop action group; `"menu-item"` renders a plain text entry styled like the other mobile-menu
+  links, added to `components/navbar.tsx`'s mobile menu with `onBeforeShare={() => setIsMenuOpen(false)}`.
+- No unit tests for this task (DOM/React wiring only, per task instructions) — verified by
+  `tsc`/lint/build below.
+
+### Verification (T3–T5, run together after T5)
+- `pnpm test`: **PASS** — `Test Files 8 passed (8)`, `Tests 90 passed (90)`.
+- `npx tsc --noEmit`: **PASS** — no output, exit clean.
+- `pnpm lint`: **PASS** — only the same pre-existing `<img>` warnings as T1/T2 (5 files, all outside
+  this feature's scope). No errors, no new warnings from T3–T5 files.
+- `pnpm build`: **PASS** — `✓ Compiled successfully`; `/` First Load JS **before: 105 kB → after:
+  106 kB** (qrcode + Radix Dialog stay in `ShareDialog`'s dynamic, `ssr:false` chunk, not the
+  initial bundle — confirms the lazy-load requirement).
+
+### Line counts
+`git diff --shortstat e21e46d..HEAD -- . ':!pnpm-lock.yaml' ':!package-lock.json'`:
+```
+11 files changed, 538 insertions(+), 2 deletions(-)
+```
+(T3+T4+T5 together; lockfile changes for `qrcode`/`@types/qrcode` landed with T3's commit, and
+`@radix-ui/react-dialog`'s with T4's commit, per the "lockfile with its task" rule — each `pnpm add`
+was re-run against a package.json with only that task's dependency present so the lockfile diff
+split the same way.)
+
+### T5b — Parent browser verification fixes
+Three issues found by the parent's browser verification of T3–T5, fixed as one follow-up work unit
+in the same worktree/branch.
+
+**Bug 1 — board input leaked through the open share dialog** (`7b555e3 fix(game): ignore board
+input while a dialog is open`). Repro: `/?t=2#projects`, open the share dialog, focus "Descargar
+PNG", press ArrowDown → the board behind the modal walked to the next stop and the URL changed,
+while the dialog kept showing the old URL/QR. Cause: `board-game.tsx`'s `wheel`/`keydown`/
+`touchstart`/`touchend` listeners on `window` only guarded against INPUT/TEXTAREA targets.
+- New pure helper `shouldIgnoreBoardInput({ targetTag, targetIsContentEditable, targetInDialog,
+  modalOpen })` in `components/game/board-events.ts` (kept the INPUT/TEXTAREA rule, added SELECT
+  and contenteditable).
+  - RED: `pnpm test -- board-events.test.ts` → `6 failed | 90 passed (96)`, all
+    `TypeError: shouldIgnoreBoardInput is not a function`.
+  - GREEN: `96 passed (96)`.
+- Wired into all four `board-game.tsx` handlers via two small DOM helpers: `isModalOpen()` —
+  `document.querySelector('[role="dialog"][data-state="open"]')` — and `describeInputTarget(target)`
+  — tag, `isContentEditable`, and `target.closest('[role="dialog"]')` — read fresh at event time, so
+  the board never couples to the share feature's React state (Radix `DialogContent` renders
+  `role="dialog"` and `data-state`, confirmed in `node_modules/@radix-ui/react-dialog/dist/index.mjs`).
+  When `shouldIgnoreBoardInput` is true, the handler returns immediately: no `preventDefault()`, no
+  move — fixing both the board-walks-behind-the-dialog bug and the Space-to-activate-a-button
+  breakage the same guard was causing.
+- Browser-verified (dev server, full mode, `/?t=2#projects`): opened the dialog, focused "Descargar
+  PNG", pressed ArrowDown — board stayed on CASILLA 12 (Projects), dialog still showed
+  `http://localhost:3000/?t=2#projects`. `read_page` confirmed `dialog [ref_24]` present throughout.
+
+**Gap — downloaded SVG had no standalone size, and its object URL was revoked too eagerly**
+(`acd570d fix(share): export standalone sized svg and defer url revoke`). In
+`share-dialog.tsx#serializeQrSvg`, the cloned `<svg>` kept only `viewBox` plus the Tailwind `class`
+(meaningless outside the page) — some apps open it at an odd size. Fixed: the clone now gets explicit
+`width`/`height` (`SVG_EXPORT_SIZE = 512`) and has `class` removed. Also, `downloadBlob` revoked its
+`URL.createObjectURL` synchronously right after `anchor.click()`, which can cancel the download in
+some browsers; now deferred by `REVOKE_URL_DELAY_MS = 100` via `setTimeout`. DOM-only change, no new
+pure logic — verified by `tsc`/lint/build.
+
+**Bug 2 — the mobile menu's "Compartir" never showed the dialog** (`b09bacf fix(share): keep the
+share dialog mounted when the mobile menu closes`). Repro: 375px, `/?mode=lite#skills`, no
+`navigator.share`, coarse pointer → strategy `"dialog"`; tapping the hamburger then "Compartir"
+closed the menu and no `[role="dialog"]` ever appeared. Cause: `onBeforeShare` called
+`setIsMenuOpen(false)`, which unmounted the menu-item `<ShareButton>` — the component that owned
+`dialogOpen`/`hasOpenedDialog` and rendered `<ShareDialog>` — taking the about-to-open dialog down
+with it.
+- Fix: extracted the share state and click logic into `components/share/use-share.tsx`
+  (`useShare()` → `{ share, dialog }`), called once in `Navbar` above the collapsible mobile menu;
+  `{dialog}` is now rendered at the header's root, outside the `{isMenuOpen && (...)}` block, so it
+  survives the menu closing. `share()` holds the exact same click logic T5 had (live
+  `buildShareUrl`/`getShareStrategy`, native with `AbortError` ignored, dialog fallback), and
+  `ShareDialog` is still lazy-loaded via `next/dynamic({ ssr: false })`, only mounted after the
+  first open. `<ShareButton>` is now a thin, stateless presentational trigger
+  (`{ variant, className, onShare }`) — no logic duplicated between the desktop icon and the mobile
+  menu item, which calls `setIsMenuOpen(false)` then `share()`.
+- No new pure logic (state wiring only) — no unit test added; verified by `tsc`/lint/build and
+  browser.
+- Browser-verified (375px, `/?mode=lite#skills`, confirmed via `navigator.share` `"undefined"` and
+  `matchMedia("(pointer: coarse)").matches === true` so strategy resolves to `"dialog"`): opened the
+  hamburger menu, tapped "Compartir" — menu closed and the dialog appeared with
+  `input[aria-label="Enlace para compartir"].value === "http://localhost:3000/#skills"` (mode
+  stripped, hash kept); `document.documentElement.scrollWidth === clientWidth === 375` (no
+  horizontal overflow).
+
+### Verification (T5b, run together)
+- `pnpm test`: **PASS** — `Test Files 8 passed (8)`, `Tests 96 passed (96)`.
+- `npx tsc --noEmit`: **PASS** — no output, exit clean.
+- `pnpm lint`: **PASS** — only the same pre-existing `<img>` warnings (5 files outside this
+  feature's scope). No errors, no new warnings.
+- `pnpm build`: **PASS** — `✓ Compiled successfully`; `/` First Load JS unchanged at **106 kB**.
+
+### T6 — link previews (`1629810 feat(seo): add open graph and twitter link previews`)
+- New pure helper `lib/site-url.ts#resolveSiteUrl(env)`: `NEXT_PUBLIC_SITE_URL` (full URL, trailing
+  slash tolerated, falls through if invalid) → `https://${VERCEL_PROJECT_PRODUCTION_URL}` → `https://${VERCEL_URL}`
+  → `http://localhost:3000`; empty/whitespace values ignored at every step.
+  - RED: `pnpm test -- lib/site-url.test.ts` → `Error: Cannot find module './site-url' imported from
+    .../lib/site-url.test.ts` (test file written first, no implementation).
+  - GREEN: `108 passed (108)` (96 pre-existing + 12 new). Full `pnpm test` also green at `108 passed (108)`.
+- New `lib/site-metadata.ts`: `SITE_TITLE`/`SITE_DESCRIPTION` constants shared by `app/layout.tsx`
+  and the OG/Twitter image, so the preview copy can't drift from the page's own title/description
+  (plain string literals, no branching logic — no test added, consistent with other non-pure/DOM
+  files in this feature).
+- `app/layout.tsx`: `metadataBase: resolveSiteUrl(process.env)`; kept the existing title/description
+  (now sourced from `lib/site-metadata.ts`); added `openGraph` (`type: "website"`, `locale: "es_MX"`,
+  `siteName: "BarrilitoDev"`, title, description, `url: "/"`) and `twitter`
+  (`card: "summary_large_image"`, title, description).
+- `app/opengraph-image.tsx`: `ImageResponse` from `next/og` on the default Node.js runtime (no
+  `export const runtime`). `alt` (Spanish), `size = { width: 1200, height: 630 }`,
+  `contentType = "image/png"`. Dark background (`#121212`) with a top gradient bar and "BarrilitoDev"
+  in large text, the site's Spanish description as a one-line tagline, and a
+  "Serpientes y escaleras · Portafolio" subtitle. Colors are hex conversions of the HSL theme tokens
+  from `app/globals.css` (`--primary` 193 95% 68% → `#60d9fb`, `--secondary` 43 100% 58% → `#ffc229`,
+  `--accent` 53 93% 54% → `#f7dd1d`), documented in a code comment since `ImageResponse` can't read
+  CSS custom properties. Logo embedded: `public/assets/barrildevb.png` is read with `fs.readFileSync`
+  relative to `process.cwd()` and inlined as a base64 data URL (falls back to no logo if the read fails).
+- `app/twitter-image.tsx`: re-exports `default`/`alt`/`size`/`contentType` from `./opengraph-image`
+  so X/Twitter reuses the identical generated card.
+- Deviation: `lib/site-url.ts#SiteUrlEnv` needed an index signature (`[key: string]: string | undefined`)
+  for `resolveSiteUrl(process.env)` to type-check — `tsc --noEmit` failed with `TS2559: Type
+  'ProcessEnv' has no properties in common with type 'SiteUrlEnv'` without it (a TS "weak type" check
+  triggered because every property on `SiteUrlEnv` is optional); the index signature doesn't change
+  the runtime precedence logic or the test cases.
+
+### Verification (T6)
+- `pnpm test`: **PASS** — `Test Files 9 passed (9)`, `Tests 108 passed (108)`.
+- `npx tsc --noEmit`: **PASS** — no output, exit clean.
+- `pnpm lint`: **PASS** — only the same pre-existing `<img>` warnings (5 files outside this feature's
+  scope); `app/opengraph-image.tsx`'s own `<img>` (for the inlined logo) is suppressed with
+  `eslint-disable-next-line @next/next/no-img-element` since `next/image` doesn't apply inside
+  `ImageResponse`. No errors, no new warnings.
+- `pnpm build`: **PASS** — `✓ Compiled successfully`; route table shows both
+  `○ /opengraph-image  0 B  0 B` and `○ /twitter-image  0 B  0 B` as static, `○ /maintenance` still
+  builds, `/` unchanged at 106 kB First Load JS.
+- Browser check (`pnpm start -p 3100`, stopped after the check; port 3000 untouched): `curl -s
+  http://localhost:3100/` head contains `og:title`, `og:description`, `og:url`, `og:site_name`,
+  `og:locale`, `og:image` (+ `:alt`/`:type`/`:width`/`:height`), `og:type`, and `twitter:card`,
+  `twitter:title`, `twitter:description`, `twitter:image` (+ `:alt`/`:type`/`:width`/`:height`).
+  `og:image`/`twitter:image` resolve to `http://localhost:3000/...` (from `resolveSiteUrl`'s
+  localhost fallback, since no `NEXT_PUBLIC_SITE_URL`/`VERCEL_*` env vars are set locally — expected).
+  `curl -sI http://localhost:3100/opengraph-image` and `.../twitter-image` both `HTTP/1.1 200 OK`,
+  `content-type: image/png`.
+
+### T7 — final verification (parent, inline)
+- Parent fixes found during verification:
+  - `a76b28c fix(seo): keep the og logo visible on the dark card` — the black line-art logo was nearly invisible on the
+    dark OG card; now on a white badge. Checked by rendering `/opengraph-image` (200, `image/png`, 1200×630).
+  - `eb94a76 fix(share): return focus to the share trigger when the dialog closes` — Esc left focus on `BODY` because the
+    dialog is opened programmatically (no `DialogTrigger`); `useShare` now remembers the trigger and restores it via
+    `onCloseAutoFocus` (falls back to Radix default when the trigger is gone, e.g. the closed mobile menu).
+- Browser (dev server, fresh load, console clean after marker):
+  - Dark theme, `/?mode=full#contact`: board at CASILLA 25; dialog input `http://localhost:3000/#contact` (mode stripped);
+    QR box `rgb(255,255,255)`; `BarcodeDetector` decodes the QR to `http://localhost:3000/#contact`.
+  - Light theme, `/?t=7#skills`: board at CASILLA 06; QR decodes to `http://localhost:3000/?t=7#skills`; Esc closes the
+    dialog and focus returns to "Compartir".
+  - Earlier checks (T2, T5b): hash-less load stays clean, replaceState keeps `history.length`, lite deep link scrolls,
+    board ignores keys behind the dialog, mobile menu opens the dialog, 375px without horizontal scroll, PNG 1024×1024.
+  - Head: `og:title`, `og:image`, `twitter:card=summary_large_image`, `twitter:image` present.
+- Final checks: `pnpm test` 108/108; `npx tsc --noEmit` clean; `pnpm lint` 0 errors (pre-existing `<img>` warnings only);
+  `pnpm build` green — `/` 106 kB First Load JS, `/opengraph-image` and `/twitter-image` static.
+- Not verified here: a real phone's native share sheet (this browser has no `navigator.share`); scanning with a physical
+  phone camera (decoded with `BarcodeDetector` instead).
+
 ## Review (RDD)
 - Slice PR1 range `f65a194..2456022` (includes `2456022 chore: ignore gentle-ai skill registry cache`, added so
   the untracked `.atl/` registry no longer blocks candidate selection — user choice). Assessed: risk medium,
@@ -160,5 +379,42 @@ Slices (planned): PR1 deep link = T1–T2 · PR2 share + QR = T3–T5 · PR3 OG 
   - R3-dom-hash-wiring-unasserted (suggestion): no test that `navigateToStop` uses replaceState, not pushState.
 - Note: the T2 entry above describing a "skip the first effect run" ref is superseded by `d8ecd27`.
 
+## Review (RDD) — slice PR2
+- Range `2456022..74896e9` (T2b, T3–T5, T5b; includes `pnpm-lock.yaml`): risk medium, 1481 lines, `review_due`
+  slice_budget_reached. Consent granted by user. Lineage `review-658a0b7d7c0b22b6`: one lens (reliability) →
+  approved; acknowledgement burned authority. Reviewed boundary advances to `74896e9`.
+- Advisory, non-blocking findings:
+  - R3-stale-touch-start-after-ignored-touchstart (warning) — fixed in T5c (`4703ab4`): `tsc` clean, `pnpm test` 96/96, `pnpm lint` 0 errors.
+  - R3-board-guard-wiring-unasserted (warning) — follow-up: no test for the `isModalOpen` selector / `closest('[role="dialog"]')` wiring; proven only by browser check.
+  - R3-use-share-fallback-untested (suggestion) — follow-up: hook-level test for native → AbortError / other error → dialog.
+  - R3-silent-share-and-png-failures (suggestion) — follow-up: surface "Más opciones" and PNG export failures in the aria-live region.
+- Known limitation: a hash-only navigation performed while the dev page is still compiling (before the board mounts) can be lost; full loads with a hash work.
+
+## Review (RDD) — slice PR3
+- Range `74896e9..HEAD` (T5c, T6, OG logo fix, focus fix, docs): assessed risk medium, 395 lines, `review_due` false —
+  `under_budget`. No review ran; no later commit is planned, so this slice stays unreviewed unless the user asks for one.
+- Whole-branch candidate `f65a194..ae364c9` (25 files, 2335 lines, medium) offered by the stop hook: user declined
+  (`declined_this_candidate`). No review record; delivery follows ordinary repository policy.
+
+## Delivery slices (stacked-to-main)
+PR2 of the original plan (~730 code lines) exceeded the 400-line budget, so one slicing pass split it at existing
+commit boundaries, and T2b moved to the deep-link PR it belongs to. Every boundary passes `pnpm test` and `tsc --noEmit`.
+
+| PR | Branch | Range | Code lines (with ODD log) | RDD |
+|----|--------|-------|---------------------------|-----|
+| [#4](https://github.com/jblancoh/barrilito-dev/pull/4) deep link | `claude/share-qr-01-deep-link` | `f65a194..c67e4f0` | 369 (533) | approved (`review-6c49f58b4b6311e3`; T2b in `review-658a0b7d7c0b22b6`) |
+| [#5](https://github.com/jblancoh/barrilito-dev/pull/5) QR rendering | `claude/share-qr-02-qr-render` | `c67e4f0..9030dac` | 128 | approved (`review-658a0b7d7c0b22b6`) |
+| [#6](https://github.com/jblancoh/barrilito-dev/pull/6) share dialog | `claude/share-qr-03-share-dialog` | `9030dac..5607375` | 324 | approved (`review-658a0b7d7c0b22b6`) |
+| [#7](https://github.com/jblancoh/barrilito-dev/pull/7) share button | `claude/share-qr-04-share-button` | `5607375..74896e9` | 244 (396) | approved (`review-658a0b7d7c0b22b6`) |
+| [#8](https://github.com/jblancoh/barrilito-dev/pull/8) link previews | `claude/page-share-qr-module-1f086f` | `74896e9..HEAD` | 303 (413+) | not reviewed |
+
+Merge in order; after each merge, retarget the next PR to `main`.
+
+## Follow-ups (not in scope)
+- Tests for the DOM wiring: `isModalOpen`/`closest('[role="dialog"]')` board guard and `useShare` native → fallback paths (R3 advisories).
+- Surface "Más opciones" and PNG export failures in the dialog's aria-live region (R3 suggestion).
+- Pre-existing: the navbar hamburger button has no accessible name.
+- Set `NEXT_PUBLIC_SITE_URL` in Vercel if the public domain differs from the project's production domain.
+
 ## Next step
-T3 (slice PR2). T2b range `2456022..e21e46d` assessed medium, under_budget (62 lines): pending in slice PR2 review.
+Feature complete; PRs #4 to #8 are open. Merging is the user's decision.

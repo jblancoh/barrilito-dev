@@ -17,6 +17,8 @@ import { shareFileName } from "@/lib/share"
 export interface ShareDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  /** Forwarded to Radix `DialogContent`: lets the caller return focus to whatever opened the dialog. */
+  onCloseAutoFocus?: (event: Event) => void
   /** The shareable URL to display, encode and copy. */
   url: string
 }
@@ -29,6 +31,12 @@ const COPY_FEEDBACK_MS = 2000
 /** Square canvas/export size for the downloaded PNG, in pixels. */
 const PNG_EXPORT_SIZE = 1024
 
+/** Fixed `width`/`height` baked into the standalone downloaded SVG, in pixels. */
+const SVG_EXPORT_SIZE = 512
+
+/** Delay before revoking a download's object URL: revoking it synchronously, right after `click()`, cancels the download in some browsers. */
+const REVOKE_URL_DELAY_MS = 100
+
 /** Triggers a browser download of `blob` as `fileName`, cleaning up its object URL. */
 function downloadBlob(blob: Blob, fileName: string) {
   const objectUrl = URL.createObjectURL(blob)
@@ -36,7 +44,7 @@ function downloadBlob(blob: Blob, fileName: string) {
   anchor.href = objectUrl
   anchor.download = fileName
   anchor.click()
-  URL.revokeObjectURL(objectUrl)
+  setTimeout(() => URL.revokeObjectURL(objectUrl), REVOKE_URL_DELAY_MS)
 }
 
 /**
@@ -46,7 +54,7 @@ function downloadBlob(blob: Blob, fileName: string) {
  * with `next/dynamic({ ssr: false })` by `<ShareButton>` so `qrcode` and
  * Radix Dialog are only fetched once the visitor actually opens it.
  */
-export function ShareDialog({ open, onOpenChange, url }: ShareDialogProps) {
+export function ShareDialog({ open, onOpenChange, url, onCloseAutoFocus }: ShareDialogProps) {
   const svgRef = React.useRef<SVGSVGElement>(null)
   const inputRef = React.useRef<HTMLInputElement>(null)
   const [copyFeedback, setCopyFeedback] = React.useState<CopyFeedback>("idle")
@@ -75,12 +83,19 @@ export function ShareDialog({ open, onOpenChange, url }: ShareDialogProps) {
     }
   }
 
-  /** Serializes the rendered QR `<svg>` into a standalone, namespaced markup string. */
+  /**
+   * Serializes the rendered QR `<svg>` into a standalone, namespaced markup
+   * string: explicit `width`/`height` (some apps size an SVG oddly without
+   * them) and no Tailwind `class`, which means nothing outside this page.
+   */
   const serializeQrSvg = (): string | null => {
     const svg = svgRef.current
     if (!svg) return null
     const clone = svg.cloneNode(true) as SVGSVGElement
     clone.setAttribute("xmlns", "http://www.w3.org/2000/svg")
+    clone.setAttribute("width", String(SVG_EXPORT_SIZE))
+    clone.setAttribute("height", String(SVG_EXPORT_SIZE))
+    clone.removeAttribute("class")
     return new XMLSerializer().serializeToString(clone)
   }
 
@@ -125,7 +140,7 @@ export function ShareDialog({ open, onOpenChange, url }: ShareDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-2rem)] max-w-sm sm:max-w-md">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-sm sm:max-w-md" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle>Compartir esta página</DialogTitle>
           <DialogDescription>Escanea el código o copia el enlace para compartir esta vista.</DialogDescription>

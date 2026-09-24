@@ -66,6 +66,33 @@ export function prefersReducedMotion(): boolean {
     : false
 }
 
+/** Tag names that should keep wheel/keyboard/touch input away from the board (native form controls). */
+const FORM_CONTROL_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"])
+
+export interface ShouldIgnoreBoardInputInput {
+  /** Tag name of the event target, e.g. "INPUT" — `null` when there's no element target. */
+  targetTag: string | null
+  /** Whether the target is (or is inside) a `contenteditable` element. */
+  targetIsContentEditable: boolean
+  /** Whether the event target sits inside a modal dialog (e.g. `target.closest('[role="dialog"]')`). */
+  targetInDialog: boolean
+  /** Whether any modal dialog is currently open in the document, regardless of the event target. */
+  modalOpen: boolean
+}
+
+/**
+ * Decides whether the board's wheel/keyboard/touch handlers should ignore
+ * an event entirely — no move, no `preventDefault()` — because a modal
+ * dialog (e.g. the share dialog) is open, the event targets that dialog, or
+ * the target is a form control the visitor is typing into. The board and a
+ * dialog above it must never react to the same input at once.
+ */
+export function shouldIgnoreBoardInput(input: ShouldIgnoreBoardInputInput): boolean {
+  if (input.modalOpen || input.targetInDialog) return true
+  if (input.targetIsContentEditable) return true
+  return input.targetTag !== null && FORM_CONTROL_TAGS.has(input.targetTag)
+}
+
 /**
  * Single entry point for "go to this stop" clicks (navbar, and any other
  * chrome outside the board/classic-home tree): dispatches to the board
