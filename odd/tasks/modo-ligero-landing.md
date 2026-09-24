@@ -36,7 +36,7 @@ Forecast: ~450 authored changed lines.
 ## Tasks
 - [x] T0 Sync branch with `origin/main` (fast-forward to 5c13f83); `pnpm test` 29/29 green — route: inline
 - [x] T1 `detectRenderMode` pure function + WebGL/env probe, overrides `?mode=` and stored preference — route: delegated (writer trigger)
-- [ ] T2 Visible classic home (sections with `id={stop.key}`) + `HomeSwitch` in `app/page.tsx` — route: delegated
+- [x] T2 Visible classic home (sections with `id={stop.key}`) + `HomeSwitch` in `app/page.tsx` — route: delegated
 - [ ] T3 `navigateToStop` (board event if listener, else scrollIntoView) used by navbar — route: delegated
 - [ ] T4 Runtime fallback: try/catch renderer/init, `webglcontextlost`, `shouldDegrade` FPS watchdog, ready timeout → switch to lite — route: delegated
 - [ ] T5 Manual toggle "Versión ligera / Ver en 3D" persisting preference — route: delegated
@@ -52,6 +52,8 @@ Forecast: ~450 authored changed lines.
 ## Progress / evidence
 - T0: fast-forward merge of `origin/main`; tests 29 passed.
 - T1: commit `2aed8c7`. TDD: RED — `pnpm test` failed with "Cannot find module './render-mode'" (render-mode.test.ts, 11 cases). GREEN — implemented `components/game/render-mode.ts` (`detectRenderMode`, `readRenderEnv`, `storeRenderMode`); `pnpm test` 39/39 passed. `tsc --noEmit` clean.
+- Deviation (infra, commit `8a31d31`): `pnpm lint` failed with an ESLint "@next/next plugin conflicted" error caused by this worktree living inside the main checkout's directory tree (ESLint's config search walked up and found the parent repo's `.eslintrc.json` too). Fixed by adding `"root": true` to this worktree's `.eslintrc.json` — one line, no rule changes, unblocks the required `pnpm lint`/`pnpm build` verification.
+- T2: commit `d732aba`. Extracted `section-registry.tsx` (shared stop→component map) out of `board-game.tsx`; evolved `seo-fallback.tsx` into `ClassicHome({ visible })` reusing the same section components (kept `SeoFallback` export alias); added `home-switch.tsx` deciding full/lite after mount and mounting the existing `next/dynamic(ssr:false)` `BoardGame` only for full; `app/page.tsx` now just renders `HomeSwitch`. `BoardGame` gained an optional `onFallback` prop (stored in a ref; wired up in T4). Verified: `pnpm test` 39/39, `tsc --noEmit` clean, `pnpm lint` clean (only pre-existing unrelated `<img>` warnings), `pnpm build` green — `/` route First Load JS dropped 244 kB → 105 kB (three.js no longer in the initial bundle). Browser-checked `/?mode=lite` at 375px (no horizontal scroll, `scrollWidth === clientWidth === 375`) and the default full board — both render with no console errors. Navbar doesn't yet scroll the classic home (no board listener and no scroll wiring yet) — that's T3.
 
 ## Next step
-T2.
+T3.
