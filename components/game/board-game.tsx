@@ -170,15 +170,19 @@ export function BoardGame({ onFallback }: BoardGameProps = {}) {
 
     let touchStartY = 0
     let touchStartTarget: EventTarget | null = null
+    // Only a gesture whose touchstart the board accepted may move it on touchend, so an
+    // ignored start (dialog open) can't pair with a later end using stale coordinates.
+    let touchTracked = false
     const onTouchStart = (e: TouchEvent) => {
       const target = describeInputTarget(e.target)
-      if (shouldIgnoreBoardInput({ targetTag: target.tag, targetIsContentEditable: target.isContentEditable, targetInDialog: target.inDialog, modalOpen: isModalOpen() })) {
-        return
-      }
+      touchTracked = !shouldIgnoreBoardInput({ targetTag: target.tag, targetIsContentEditable: target.isContentEditable, targetInDialog: target.inDialog, modalOpen: isModalOpen() })
+      if (!touchTracked) return
       touchStartY = e.touches[0].clientY
       touchStartTarget = e.target
     }
     const onTouchEnd = (e: TouchEvent) => {
+      if (!touchTracked) return
+      touchTracked = false
       const target = describeInputTarget(e.target)
       if (shouldIgnoreBoardInput({ targetTag: target.tag, targetIsContentEditable: target.isContentEditable, targetInDialog: target.inDialog, modalOpen: isModalOpen() })) {
         return
