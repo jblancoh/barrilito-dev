@@ -1,15 +1,5 @@
-import dynamic from "next/dynamic"
-import { SeoFallback } from "@/components/game/seo-fallback"
-
-const BoardGame = dynamic(() => import("@/components/game/board-game").then((m) => m.BoardGame), {
-  ssr: false,
-})
+import { HomeSwitch } from "@/components/game/home-switch"
 
 export default function Home() {
-  return (
-    <>
-      <SeoFallback />
-      <BoardGame />
-    </>
-  )
+  return <HomeSwitch />
 }

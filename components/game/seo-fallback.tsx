@@ -1,84 +1,50 @@
-import { STOPS } from "./board-config"
-import { contactInfo, projects, services, skills, socialLinks } from "@/lib/content"
+import { LADDERS, SNAKES, STOPS, type StopKey } from "./board-config"
+import type { BoardNav } from "./board-nav"
+import { renderSection } from "./section-registry"
+
+function scrollToStop(key: StopKey): void {
+  if (typeof document === "undefined") return
+  document.getElementById(key)?.scrollIntoView({ behavior: "smooth", block: "start" })
+}
+
+/** The classic home has no board, so a "shortcut" jumps straight to the ladder/snake's destination stop. */
+const classicNav: BoardNav = {
+  goTo: scrollToStop,
+  shortcut: (kind, index) => {
+    const dest = kind === "ladder" ? LADDERS[index]?.dest : SNAKES[index]?.dest
+    if (dest !== undefined) scrollToStop(STOPS[dest].key)
+  },
+}
+
+export interface ClassicHomeProps {
+  /**
+   * true renders the real, natively scrollable classic layout (lite mode).
+   * false (default) keeps the exact same markup present for SEO and screen
+   * readers but visually hidden (`sr-only`) — the interactive three.js
+   * board is what capable browsers actually see.
+   */
+  visible?: boolean
+}
 
 /**
- * The interactive board is a client-only three.js scene (next/dynamic,
- * ssr:false) and never appears in the server-rendered HTML. This component
- * renders every section's real content, in the same DOM order as the board's
- * stops, so crawlers and screen readers relying on the static markup still
- * see the full page content. Visually hidden (`sr-only`) on capable browsers.
+ * The classic home: every section, in board order, as real standalone
+ * markup (one `<section id={stop.key}>` per stop, reusing the same section
+ * components the board renders). The interactive board is a client-only
+ * three.js scene (next/dynamic, ssr:false) and never appears in the
+ * server-rendered HTML, so this component's DOM is what crawlers, screen
+ * readers and lite-mode visitors actually get.
  */
-export function SeoFallback() {
+export function ClassicHome({ visible = false }: ClassicHomeProps) {
   return (
-    <div className="sr-only">
-      <section aria-label={STOPS[0].label}>
-        <h1>Hola, soy BarrilitoDev</h1>
-        <p>
-          Desarrollador web especializado en React, Next.js, Nest.js, Firebase y JavaScript. Creando experiencias
-          digitales excepcionales.
-        </p>
-        <ul>
-          <li>
-            <a href={socialLinks.github}>GitHub</a>
-          </li>
-          <li>
-            <a href={socialLinks.linkedin}>LinkedIn</a>
-          </li>
-          <li>
-            <a href={socialLinks.twitter}>Twitter</a>
-          </li>
-        </ul>
-      </section>
-
-      <section aria-label={STOPS[1].label}>
-        <h2>Mis Habilidades</h2>
-        <ul>
-          {skills.map((skill) => (
-            <li key={skill.title}>
-              <strong>{skill.title}</strong>: {skill.description}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section aria-label={STOPS[2].label}>
-        <h2>Mis Proyectos</h2>
-        <ul>
-          {projects.map((project) => (
-            <li key={project.title}>
-              <strong>{project.title}</strong>: {project.description} ({project.tags.join(", ")})
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section aria-label={STOPS[3].label}>
-        <h2>Servicios</h2>
-        <ul>
-          {services.map((service) => (
-            <li key={service.title}>{service.title}</li>
-          ))}
-        </ul>
-      </section>
-
-      <section aria-label={STOPS[4].label}>
-        <h2>Información de contacto</h2>
-        <p>Email: {contactInfo.email}</p>
-        <p>Teléfono: {contactInfo.phone}</p>
-        <p>Ubicación: {contactInfo.location}</p>
-        <ul>
-          {contactInfo.schedule.map((slot) => (
-            <li key={slot.days}>
-              {slot.days}: {slot.hours}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section aria-label={STOPS[5].label}>
-        <h2>Contacto</h2>
-        <p>¿Tienes un proyecto en mente? ¡Hablemos! Escribe a {contactInfo.email}.</p>
-      </section>
+    <div className={visible ? "container mx-auto flex flex-col gap-20 pb-24 pt-24" : "sr-only"}>
+      {STOPS.map((stop) => (
+        <section key={stop.key} id={stop.key} aria-label={stop.label} className="scroll-mt-20">
+          {renderSection(stop.key, classicNav)}
+        </section>
+      ))}
     </div>
   )
 }
+
+// Kept for compatibility with any existing import of the previous name.
+export { ClassicHome as SeoFallback }

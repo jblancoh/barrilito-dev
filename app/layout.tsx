@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import localFont from "next/font/local"
 import "./globals.css"
 import { Navbar } from "@/components/navbar"
+import { RenderModeProvider } from "@/components/game/render-mode-context"
 import { SiteChrome } from "@/components/site-chrome"
 import { ThemeProvider } from "@/components/theme-provider"
 
@@ -30,8 +31,10 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <body className={`${inter.className} ${geistMono.variable}`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <Navbar />
-          <SiteChrome>{children}</SiteChrome>
+          <RenderModeProvider>
+            <Navbar />
+            <SiteChrome>{children}</SiteChrome>
+          </RenderModeProvider>
         </ThemeProvider>
       </body>
     </html>
