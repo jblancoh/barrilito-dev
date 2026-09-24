@@ -39,7 +39,7 @@ Forecast: ~450 authored changed lines.
 - [x] T2 Visible classic home (sections with `id={stop.key}`) + `HomeSwitch` in `app/page.tsx` — route: delegated
 - [x] T3 `navigateToStop` (board event if listener, else scrollIntoView) used by navbar — route: delegated
 - [x] T4 Runtime fallback: try/catch renderer/init, `webglcontextlost`, `shouldDegrade` FPS watchdog, ready timeout → switch to lite — route: delegated
-- [ ] T5 Manual toggle "Versión ligera / Ver en 3D" persisting preference — route: delegated
+- [x] T5 Manual toggle "Versión ligera / Ver en 3D" persisting preference — route: delegated
 - [ ] T6 Cheaper full mode: pause RAF when hidden, DPR ≤ 1.5, lighter shadows/antialias on modest devices — route: delegated
 
 ## Acceptance criteria
@@ -59,5 +59,7 @@ Forecast: ~450 authored changed lines.
 
 - T4: commit `e7844aa`. TDD: RED — `pnpm test` failed, "Cannot find module './fps-watchdog'" (fps-watchdog.test.ts, 6 cases). GREEN — implemented `shouldDegrade` (pure); `pnpm test` 49/49. Wired `use-board-scene.ts`: try/catch around `WebGLRenderer` construction and the async `init()` promise, `webglcontextlost` listener, 3s post-ready FPS sampling, 8s ready timeout, all reporting through a new `onError`/`onFallback` at most once; `board-game.tsx`'s `onFallbackRef` (from T2) now actually forwards to `HomeSwitch.handleFallback` (already non-persisting from T2). Verified existing wheel/keydown/touch listener cleanup in `board-game.tsx` unchanged and correct (no edit needed). `tsc --noEmit` clean, `pnpm lint` clean, `pnpm build` green (route size unchanged). Browser-checked the default full board still loads/runs with no console errors and no false-positive degrade. Could not reproduce an actual WebGL failure through the available browser tooling, so the renderer-failed/context-lost/timeout paths rely on code review of the try/catch and listener wiring rather than a live repro — flagged for manual verification.
 
+- T5: commit `f472552`. Not a strict-TDD task (UI wiring, not pure logic). Added `render-mode-context.tsx` (`RenderModeProvider`/`useRenderMode`) wrapping `<Navbar/>` + `<SiteChrome>` in `app/layout.tsx` (touches layout.tsx, not explicitly in the original Scope list, but required to share mode state between the two sibling components — noted as a deviation); `home-switch.tsx` now reads from context instead of local state; `navbar.tsx` adds the "Versión ligera"/"Ver en 3D" toggle (desktop + mobile menu), shown only on `/`. Also added one `console.warn` at the hook's fallback choke point (`use-board-scene.ts`) covering every fallback reason, not just the three that already logged. Verified: `pnpm test` 49/49, `tsc --noEmit` clean, `pnpm lint` clean, `pnpm build` green (route size ~unchanged, 105 kB). Browser-checked several manual full↔lite round trips: correct label each time, `localStorage["barrilito:render-mode"]` persists, survives reload, mobile menu shows the same toggle, no horizontal scroll at 375px. Note: mid-session, while multiple files were being hot-reloaded in quick succession, one toggle-to-full attempt silently reverted to lite with no logged reason and a stale `useRenderMode` provider error appeared — both traced to Next.js Fast Refresh churn (confirmed by a full dev-server restart and fresh tab, after which repeated round trips were consistently correct); not reproducible against the built app and not a code defect, but flagged for a final manual smoke test.
+
 ## Next step
-T5.
+T6.
