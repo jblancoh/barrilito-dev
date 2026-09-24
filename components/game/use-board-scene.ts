@@ -618,7 +618,7 @@ class BoardScene {
       this.reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
       this.reducedMotionQuery.addEventListener?.("change", this.onReducedMotionChange)
     }
-    this.init()
+    this.init().catch((err) => console.error("[board-scene] init failed", err))
   }
 
   private onReducedMotionChange = (e: MediaQueryListEvent) => {
@@ -654,6 +654,7 @@ class BoardScene {
 
     const scene = (this.scene = new THREE.Scene())
     scene.background = new THREE.Color()
+    this.fogColor = new THREE.Color()
 
     this.ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 200)
     this.persp = new THREE.PerspectiveCamera(42, 1, 0.1, 200)
@@ -685,7 +686,6 @@ class BoardScene {
     this.die.position.copy(this.dieRest(1))
     this.die.rotation.set(0, 0.6, 0)
 
-    this.fogColor = new THREE.Color()
     this.ro = new ResizeObserver(() => this.resize())
     this.ro.observe(this.host)
     this.resize()
