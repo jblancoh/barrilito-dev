@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react"
 import * as THREE from "three"
+import { toHslColor } from "./color"
 import {
   FACE_ROTATIONS,
   LADDERS,
@@ -90,8 +91,7 @@ interface Palette {
 }
 
 function cssHsl(name: string): string {
-  const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
-  return `hsl(${raw || "0 0% 0%"})`
+  return toHslColor(getComputedStyle(document.documentElement).getPropertyValue(name))
 }
 
 function withAlpha(hsl: string, alpha: number): string {
@@ -127,7 +127,7 @@ function buildPalette(dark: boolean): Palette {
     border,
     tileA: card,
     tileB: muted,
-    slab: dark ? "hsl(0 0% 13%)" : border,
+    slab: dark ? "hsl(0, 0%, 13%)" : border,
     line: dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)",
   }
 }
@@ -857,8 +857,8 @@ class BoardScene {
     this.ladderMat.color.set(pal.secondary)
     this.snakes.forEach((s) => paintSnake(s, pal))
 
-    this.bodyMat.color.set(dark ? pal.foreground : "hsl(0 0% 12%)")
-    this.hoopMat.color.set(dark ? "hsl(0 0% 10%)" : "hsl(0 0% 96%)")
+    this.bodyMat.color.set(dark ? pal.foreground : "hsl(0, 0%, 12%)")
+    this.hoopMat.color.set(dark ? "hsl(0, 0%, 10%)" : "hsl(0, 0%, 96%)")
     this.atomMat.color.set(pal.primary)
     this.atomMat.emissive.set(pal.primary)
     if (this.glow.material.map) this.glow.material.map.dispose()
@@ -1366,7 +1366,7 @@ export function useBoardScene(
     if (!host) return
     const scene = new BoardScene({
       host,
-      dark: optionsRef.current.dark,
+      dark: document.documentElement.classList.contains("dark"),
       camera: optionsRef.current.camera ?? "B",
       speed: optionsRef.current.speed ?? 1,
       confetti: optionsRef.current.confetti ?? true,
@@ -1382,9 +1382,21 @@ export function useBoardScene(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hostRef])
 
+  // Follow the `dark` class on <html> instead of `options.dark`: next-themes toggles the class in
+  // its own effect, which runs after this child's effects, so reading CSS variables on the
+  // resolvedTheme change would still see the previous theme's values.
   useEffect(() => {
-    sceneRef.current?.applyTheme(options.dark)
-  }, [options.dark])
+    const root = document.documentElement
+    let applied = root.classList.contains("dark")
+    const observer = new MutationObserver(() => {
+      const dark = root.classList.contains("dark")
+      if (dark === applied) return
+      applied = dark
+      sceneRef.current?.applyTheme(dark)
+    })
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] })
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     if (options.camera) sceneRef.current?.setCamera(options.camera)

@@ -31,6 +31,7 @@ Strategy: single branch, work-unit commits, push (user request). No PR requested
 - [x] T1 Foundations: deps, vitest, Tailwind chart5, Geist Mono, `lib/content.ts`, `board-config.ts` + pure path logic with tests — route: delegated (writer trigger, 2+ files)
 - [x] T2 three.js scene hook `use-board-scene.ts` (board, tiles, ladders, snakes, token, die, cameras A/B, anim queue, theme, dispose) — route: delegated
 - [x] T3 Overlay UI + wiring: board-game, HUD, stop rail, section panel + 6 sections, input (wheel/keys/touch/goTo), navbar overlay, page/layout, loading, reduced motion, SEO fallback — route: delegated
+- [x] T5 Fix dark mode scene colors (user report): three.js r160 `Color.setStyle` ignores space-separated `hsl(h s% l%)`, leaving materials/background white; theme toggle read CSS vars before next-themes switched the `dark` class — route: inline (1–3 files)
 - [x] T4 Verification: `pnpm test`, `pnpm lint`, `pnpm build`, browser check of both themes — route: inline + delegated
 
 ## Acceptance criteria
@@ -132,3 +133,8 @@ untracked as instructed.
 None — feature complete (T1–T4 done). Optional follow-ups (not requested): GLTF token/die/snake-head models
 (builders are already isolated for this), camera A (isometric) UI toggle (prop already supported by the
 scene), real project screenshots instead of the "captura del proyecto" placeholder.
+
+### T5 Dark mode fix — done
+- Root cause 1 (verified in node): `new THREE.Color().set("hsl(0 0% 7%)")` stays `ffffff`; comma form gives `121212`. Added `components/game/color.ts` `toHslColor()` + `color.test.ts` (RED: missing module → GREEN 29/29).
+- Root cause 2: child effect on `resolvedTheme` ran before next-themes applied the `<html>` class. Scene now follows the `dark` class via `MutationObserver`.
+- Checks: `pnpm test` 29 passed, `tsc --noEmit` clean, lint no new warnings. Browser visual check not possible (pane hidden) — pending user confirmation.
