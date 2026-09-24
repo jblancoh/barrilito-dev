@@ -17,6 +17,8 @@ import { shareFileName } from "@/lib/share"
 export interface ShareDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  /** Forwarded to Radix `DialogContent`: lets the caller return focus to whatever opened the dialog. */
+  onCloseAutoFocus?: (event: Event) => void
   /** The shareable URL to display, encode and copy. */
   url: string
 }
@@ -52,7 +54,7 @@ function downloadBlob(blob: Blob, fileName: string) {
  * with `next/dynamic({ ssr: false })` by `<ShareButton>` so `qrcode` and
  * Radix Dialog are only fetched once the visitor actually opens it.
  */
-export function ShareDialog({ open, onOpenChange, url }: ShareDialogProps) {
+export function ShareDialog({ open, onOpenChange, url, onCloseAutoFocus }: ShareDialogProps) {
   const svgRef = React.useRef<SVGSVGElement>(null)
   const inputRef = React.useRef<HTMLInputElement>(null)
   const [copyFeedback, setCopyFeedback] = React.useState<CopyFeedback>("idle")
@@ -138,7 +140,7 @@ export function ShareDialog({ open, onOpenChange, url }: ShareDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-2rem)] max-w-sm sm:max-w-md">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-sm sm:max-w-md" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle>Compartir esta página</DialogTitle>
           <DialogDescription>Escanea el código o copia el enlace para compartir esta vista.</DialogDescription>

@@ -34,8 +34,12 @@ export function useShare(): UseShareResult {
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [hasOpenedDialog, setHasOpenedDialog] = React.useState(false)
   const [shareUrl, setShareUrl] = React.useState("")
+  // Radix only restores focus to a <DialogTrigger>; this dialog is opened
+  // programmatically, so remember the element that started the share.
+  const returnFocusRef = React.useRef<HTMLElement | null>(null)
 
   const share = React.useCallback(async () => {
+    returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
     const url = buildShareUrl(window.location.href)
     const strategy = getShareStrategy({
       hasNativeShare: typeof navigator.share === "function",
@@ -58,7 +62,17 @@ export function useShare(): UseShareResult {
     setDialogOpen(true)
   }, [])
 
-  const dialog = hasOpenedDialog ? <ShareDialog open={dialogOpen} onOpenChange={setDialogOpen} url={shareUrl} /> : null
+  const restoreFocus = React.useCallback((event: Event) => {
+    const target = returnFocusRef.current
+    // The mobile menu entry is gone by now (the menu closed); fall back to Radix's default then.
+    if (!target?.isConnected) return
+    event.preventDefault()
+    target.focus()
+  }, [])
+
+  const dialog = hasOpenedDialog ? (
+    <ShareDialog open={dialogOpen} onOpenChange={setDialogOpen} url={shareUrl} onCloseAutoFocus={restoreFocus} />
+  ) : null
 
   return { share, dialog }
 }
