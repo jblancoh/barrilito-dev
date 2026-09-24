@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { buildShareUrl, getShareStrategy, parseStopHash, shouldSyncStopHash, withStopHash } from "./share"
+import { buildShareUrl, getShareStrategy, parseStopHash, shareFileName, shouldSyncStopHash, withStopHash } from "./share"
 
 describe("parseStopHash", () => {
   it("accepts a hash with the leading '#'", () => {
@@ -116,5 +116,23 @@ describe("shouldSyncStopHash", () => {
 
   it("skips the write when the hash already matches the stop", () => {
     expect(shouldSyncStopHash({ currentHash: "#projects", stopKey: "projects", onInitialStop: false })).toBe(false)
+  })
+})
+
+describe("shareFileName", () => {
+  it("includes the stop key when the URL hash matches a real stop", () => {
+    expect(shareFileName("https://example.com/#projects")).toBe("barrilitodev-projects")
+  })
+
+  it("falls back to the plain name when the URL has no hash", () => {
+    expect(shareFileName("https://example.com/")).toBe("barrilitodev")
+  })
+
+  it("falls back to the plain name for a foreign fragment", () => {
+    expect(shareFileName("https://example.com/#main-content")).toBe("barrilitodev")
+  })
+
+  it("falls back to the plain name for a lone '#'", () => {
+    expect(shareFileName("https://example.com/#")).toBe("barrilitodev")
   })
 })
