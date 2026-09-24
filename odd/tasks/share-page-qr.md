@@ -40,6 +40,7 @@ Slices (planned): PR1 deep link = T1–T2 · PR2 share + QR = T3–T5 · PR3 OG 
 ## Tasks
 - [x] T1 `lib/share.ts`: `buildShareUrl`, `getShareStrategy`, `parseStopHash` with vitest (RED→GREEN) — route: delegated (writer trigger: 2+ files, preparation reading)
 - [x] T2 Board deep link: initial stop from `location.hash`, `replaceState` on stop change, invalid hash ignored; verify lite `/#projects` — route: delegated (same writer as T1)
+- [x] T2b Keep foreign fragments (skip links, auth callbacks) intact on mount; test `navigateToStop` replaceState — added from RDD review R3 advisories — route: inline (2 small, understood files)
 - [ ] T3 `qrcode` dependency + `<ShareQr>` SVG (dark-on-light) with tests for the QR options helper — route: pending
 - [ ] T4 shadcn `dialog` + `<ShareDialog>`: copy link with feedback, download QR (PNG/SVG), a11y — route: pending
 - [ ] T5 `<ShareButton>` in navbar desktop + mobile menu; native share when available, dialog otherwise — route: pending
@@ -139,6 +140,25 @@ Slices (planned): PR1 deep link = T1–T2 · PR2 share + QR = T3–T5 · PR3 OG 
   `?x=1`; `/#skills` reload opens on Skills. Lite `/?mode=lite#contact`: no canvas, `#contact` scrolled
   to `top: 80px` (below the fixed navbar). Console clean after a fresh load (earlier
   `shouldSyncStopHash is not defined` errors were the HMR window between two edits).
+
+### T2b — foreign fragments (`60cc9ef fix(game): leave foreign url fragments intact on board mount`)
+- RED: new `shouldSyncStopHash` cases (`#main-content`, `#` on the initial stop) failed —
+  `AssertionError: expected true to be false`, `1 failed | 80 passed (81)`. The new `navigateToStop`
+  scroll-branch test (stubbed `window`/`document`: replaceState called with `history.state` and
+  `/?mode=lite#projects`, pushState never) passed on first run — characterization of existing behavior.
+- GREEN: `current === null && onInitialStop` → no write; `81 passed (81)`. `tsc --noEmit` clean; `pnpm lint` 0 errors.
+
+## Review (RDD)
+- Slice PR1 range `f65a194..2456022` (includes `2456022 chore: ignore gentle-ai skill registry cache`, added so
+  the untracked `.atl/` registry no longer blocks candidate selection — user choice). Assessed: risk medium,
+  473 lines, `review_due` slice_budget_reached. Consent granted by user.
+- Lineage `review-6c49f58b4b6311e3`: one lens (reliability) → approved; acknowledgement burned authority.
+  Reviewed boundary advances to `2456022`.
+- Advisory, non-blocking findings (accepted as T2b because they contradict the "unknown hashes are ignored" constraint):
+  - R3-unknown-hash-overwritten-on-mount (warning): a foreign fragment on load was rewritten to `#about`.
+  - R3-shouldsync-unknown-hash-untested (warning): no test for a non-empty, non-stop hash on the initial stop.
+  - R3-dom-hash-wiring-unasserted (suggestion): no test that `navigateToStop` uses replaceState, not pushState.
+- Note: the T2 entry above describing a "skip the first effect run" ref is superseded by `d8ecd27`.
 
 ## Next step
 T3 (slice PR2).
