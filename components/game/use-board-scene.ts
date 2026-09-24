@@ -1429,6 +1429,7 @@ export function useBoardScene(
     const reportFallback = (reason: string) => {
       if (fallbackReported) return
       fallbackReported = true
+      console.warn(`[board-scene] falling back to lite mode: ${reason}`)
       optionsRef.current.onFallback?.(reason)
     }
 

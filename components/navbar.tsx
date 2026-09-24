@@ -2,11 +2,13 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ModeToggle } from "@/components/mode-toggle"
 import { navigateToStop } from "@/components/game/board-events"
 import type { StopKey } from "@/components/game/board-config"
+import { useRenderMode } from "@/components/game/render-mode-context"
 
 const NAV_LINKS: { key: StopKey; label: string; hoverClass: string }[] = [
   { key: "about", label: "Sobre mí", hoverClass: "hover:text-primary" },
@@ -18,12 +20,19 @@ const NAV_LINKS: { key: StopKey; label: string; hoverClass: string }[] = [
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const pathname = usePathname()
+  const { mode, setMode } = useRenderMode()
 
   if (process.env.NEXT_PUBLIC_MAINTENANCE_MODE === "true") {
     return null
   }
 
   const goTo = (key: StopKey) => navigateToStop(key)
+  // The manual toggle only makes sense on the board landing ("/"); every
+  // other route already renders the same content regardless of mode.
+  const isBoardHome = pathname === "/"
+  const renderModeLabel = mode === "full" ? "Versión ligera" : "Ver en 3D"
+  const toggleRenderMode = () => setMode(mode === "full" ? "lite" : "full")
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -58,6 +67,11 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {isBoardHome && (
+            <Button variant="outline" size="sm" onClick={toggleRenderMode} className="hidden sm:inline-flex">
+              {renderModeLabel}
+            </Button>
+          )}
           <ModeToggle />
           <Button
             variant="default"
@@ -88,6 +102,18 @@ export function Navbar() {
                 {link.label}
               </button>
             ))}
+            {isBoardHome && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  toggleRenderMode()
+                  setIsMenuOpen(false)
+                }}
+                className="w-full"
+              >
+                {renderModeLabel}
+              </Button>
+            )}
             <Button
               variant="default"
               onClick={() => {
