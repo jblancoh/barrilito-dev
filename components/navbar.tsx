@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ModeToggle } from "@/components/mode-toggle"
+import { ShareButton } from "@/components/share/share-button"
 import { navigateToStop } from "@/components/game/board-events"
 import type { StopKey } from "@/components/game/board-config"
 import { useRenderMode } from "@/components/game/render-mode-context"
@@ -73,6 +74,7 @@ export function Navbar() {
             </Button>
           )}
           <ModeToggle />
+          <ShareButton />
           <Button
             variant="default"
             onClick={() => goTo("contact")}
@@ -102,6 +104,7 @@ export function Navbar() {
                 {link.label}
               </button>
             ))}
+            <ShareButton variant="menu-item" onBeforeShare={() => setIsMenuOpen(false)} />
             {isBoardHome && (
               <Button
                 variant="outline"
