@@ -393,6 +393,8 @@ with it.
 ## Review (RDD) — slice PR3
 - Range `74896e9..HEAD` (T5c, T6, OG logo fix, focus fix, docs): assessed risk medium, 395 lines, `review_due` false —
   `under_budget`. No review ran; no later commit is planned, so this slice stays unreviewed unless the user asks for one.
+- Whole-branch candidate `f65a194..ae364c9` (25 files, 2335 lines, medium) offered by the stop hook: user declined
+  (`declined_this_candidate`). No review record; delivery follows ordinary repository policy.
 
 ## Delivery slices (stacked-to-main)
 - PR1 deep link: `f65a194..2456022` — reviewed (`review-6c49f58b4b6311e3`).
