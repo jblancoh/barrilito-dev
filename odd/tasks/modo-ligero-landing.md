@@ -40,7 +40,7 @@ Forecast: ~450 authored changed lines.
 - [x] T3 `navigateToStop` (board event if listener, else scrollIntoView) used by navbar — route: delegated
 - [x] T4 Runtime fallback: try/catch renderer/init, `webglcontextlost`, `shouldDegrade` FPS watchdog, ready timeout → switch to lite — route: delegated
 - [x] T5 Manual toggle "Versión ligera / Ver en 3D" persisting preference — route: delegated
-- [ ] T6 Cheaper full mode: pause RAF when hidden, DPR ≤ 1.5, lighter shadows/antialias on modest devices — route: delegated
+- [x] T6 Cheaper full mode: pause RAF when hidden, DPR ≤ 1.5, lighter shadows/antialias on modest devices — route: delegated
 
 ## Acceptance criteria
 - `/?mode=lite`: visible content, native scroll, navbar scrolls to sections, no three chunk requested.
@@ -61,5 +61,14 @@ Forecast: ~450 authored changed lines.
 
 - T5: commit `f472552`. Not a strict-TDD task (UI wiring, not pure logic). Added `render-mode-context.tsx` (`RenderModeProvider`/`useRenderMode`) wrapping `<Navbar/>` + `<SiteChrome>` in `app/layout.tsx` (touches layout.tsx, not explicitly in the original Scope list, but required to share mode state between the two sibling components — noted as a deviation); `home-switch.tsx` now reads from context instead of local state; `navbar.tsx` adds the "Versión ligera"/"Ver en 3D" toggle (desktop + mobile menu), shown only on `/`. Also added one `console.warn` at the hook's fallback choke point (`use-board-scene.ts`) covering every fallback reason, not just the three that already logged. Verified: `pnpm test` 49/49, `tsc --noEmit` clean, `pnpm lint` clean, `pnpm build` green (route size ~unchanged, 105 kB). Browser-checked several manual full↔lite round trips: correct label each time, `localStorage["barrilito:render-mode"]` persists, survives reload, mobile menu shows the same toggle, no horizontal scroll at 375px. Note: mid-session, while multiple files were being hot-reloaded in quick succession, one toggle-to-full attempt silently reverted to lite with no logged reason and a stale `useRenderMode` provider error appeared — both traced to Next.js Fast Refresh churn (confirmed by a full dev-server restart and fresh tab, after which repeated round trips were consistently correct); not reproducible against the built app and not a code defect, but flagged for a final manual smoke test.
 
+- T6: commit `c3fa76a`. Not one of the three mandated strict-TDD tasks, but wrote `device-tier.test.ts` first anyway: `pnpm test` failed with "Cannot find module './device-tier'", then implemented `isModestDevice`; `pnpm test` 54/54. Wired into `use-board-scene.ts`: DPR capped at 1.5 (was 2), antialias off + 1024 shadow map on a modest device (≤4 cores or <900px viewport), and the RAF loop now stops on `document.visibilitychange` hidden and resumes on visible, cleaned up in `dispose()`. Verified: `tsc --noEmit` clean, `pnpm lint` clean, `pnpm build` green (105 kB, unchanged). Browser-checked a fresh full-mode load: canvas backing width 1536 = 1024 CSS px × 1.5 DPR (confirms the cap, this profile is 8 cores/1024px so not modest); simulated a hidden→visible `visibilitychange` cycle — loop paused and resumed cleanly, scene still animating, no console errors.
+
+## Verification summary (final)
+- `pnpm test`: 54/54 passed.
+- `pnpm lint`: clean (only pre-existing `<img>` warnings in files outside this feature's scope).
+- `pnpm build`: green; `/` route First Load JS 244 kB → 105 kB (three.js no longer in the initial bundle for lite mode).
+- `tsc --noEmit`: clean throughout.
+- Browser-checked: `/?mode=lite` at 375px (no horizontal scroll), navbar scroll-to-section in lite mode, board-driven navigation in full mode, manual toggle round trips with persistence, mobile menu toggle, visibilitychange pause/resume. Not reproducible through this tooling: an actual WebGL renderer failure / lost context (T4's renderer-failed and context-lost paths rely on code review of the try/catch and listener wiring, not a live repro) — flagged for manual verification with e.g. a forced `chrome://flags` GPU block or a real low-end device.
+
 ## Next step
-T6.
+All T1–T6 tasks complete. Remaining before merge: manual verification of the WebGL-failure fallback paths noted above; push/PR are the user's decision per the ask-on-risk delivery strategy.
