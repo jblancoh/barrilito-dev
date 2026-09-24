@@ -38,7 +38,7 @@ Forecast: ~450 authored changed lines.
 - [x] T1 `detectRenderMode` pure function + WebGL/env probe, overrides `?mode=` and stored preference — route: delegated (writer trigger)
 - [x] T2 Visible classic home (sections with `id={stop.key}`) + `HomeSwitch` in `app/page.tsx` — route: delegated
 - [x] T3 `navigateToStop` (board event if listener, else scrollIntoView) used by navbar — route: delegated
-- [ ] T4 Runtime fallback: try/catch renderer/init, `webglcontextlost`, `shouldDegrade` FPS watchdog, ready timeout → switch to lite — route: delegated
+- [x] T4 Runtime fallback: try/catch renderer/init, `webglcontextlost`, `shouldDegrade` FPS watchdog, ready timeout → switch to lite — route: delegated
 - [ ] T5 Manual toggle "Versión ligera / Ver en 3D" persisting preference — route: delegated
 - [ ] T6 Cheaper full mode: pause RAF when hidden, DPR ≤ 1.5, lighter shadows/antialias on modest devices — route: delegated
 
@@ -57,5 +57,7 @@ Forecast: ~450 authored changed lines.
 
 - T3: commit `63c8846`. TDD: RED — `pnpm test` failed 4/4 new cases, "decideNavigation is not a function" (board-events.test.ts). GREEN — added `decideNavigation` (pure), `boardListenerCount`/`hasBoardListener` bookkeeping in `onBoardGoTo`, and `navigateToStop` to `board-events.ts`; `navbar.tsx` calls `navigateToStop` instead of `dispatchBoardGoTo`. `pnpm test` 43/43, `tsc --noEmit` clean, `pnpm lint` clean. Browser-verified: `/?mode=lite` navbar click scrolls to the clicked section; default full mode navbar click still drives the board (token animates); no console errors either way.
 
+- T4: commit `e7844aa`. TDD: RED — `pnpm test` failed, "Cannot find module './fps-watchdog'" (fps-watchdog.test.ts, 6 cases). GREEN — implemented `shouldDegrade` (pure); `pnpm test` 49/49. Wired `use-board-scene.ts`: try/catch around `WebGLRenderer` construction and the async `init()` promise, `webglcontextlost` listener, 3s post-ready FPS sampling, 8s ready timeout, all reporting through a new `onError`/`onFallback` at most once; `board-game.tsx`'s `onFallbackRef` (from T2) now actually forwards to `HomeSwitch.handleFallback` (already non-persisting from T2). Verified existing wheel/keydown/touch listener cleanup in `board-game.tsx` unchanged and correct (no edit needed). `tsc --noEmit` clean, `pnpm lint` clean, `pnpm build` green (route size unchanged). Browser-checked the default full board still loads/runs with no console errors and no false-positive degrade. Could not reproduce an actual WebGL failure through the available browser tooling, so the renderer-failed/context-lost/timeout paths rely on code review of the try/catch and listener wiring rather than a live repro — flagged for manual verification.
+
 ## Next step
-T4.
+T5.
