@@ -72,8 +72,23 @@ export default function OpengraphImage() {
           }}
         >
           {logo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logo} width={112} height={112} alt="" style={{ marginBottom: 40 }} />
+            // The logo is black line art (the site inverts it in dark mode), so it sits on a
+            // light badge to stay visible on the dark card.
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 144,
+                height: 144,
+                borderRadius: 72,
+                background: "#ffffff",
+                marginBottom: 40,
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logo} width={104} height={104} alt="" />
+            </div>
           ) : null}
           <div style={{ display: "flex", fontSize: 96, fontWeight: 700, color: "#ffffff" }}>BarrilitoDev</div>
           <div style={{ display: "flex", fontSize: 34, marginTop: 28, color: MUTED_TEXT }}>{SITE_DESCRIPTION}</div>
