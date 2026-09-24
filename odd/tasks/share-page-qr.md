@@ -390,5 +390,21 @@ with it.
   - R3-silent-share-and-png-failures (suggestion) — follow-up: surface "Más opciones" and PNG export failures in the aria-live region.
 - Known limitation: a hash-only navigation performed while the dev page is still compiling (before the board mounts) can be lost; full loads with a hash work.
 
+## Review (RDD) — slice PR3
+- Range `74896e9..HEAD` (T5c, T6, OG logo fix, focus fix, docs): assessed risk medium, 395 lines, `review_due` false —
+  `under_budget`. No review ran; no later commit is planned, so this slice stays unreviewed unless the user asks for one.
+
+## Delivery slices (stacked-to-main)
+- PR1 deep link: `f65a194..2456022` — reviewed (`review-6c49f58b4b6311e3`).
+- PR2 share + QR: `2456022..74896e9` — reviewed (`review-658a0b7d7c0b22b6`).
+- PR3 link previews + fixes: `74896e9..HEAD` — under budget, not reviewed.
+Push and PR creation are the user's decision; resolve the `work-unit-commits`/`chained-pr` skills before opening PRs.
+
+## Follow-ups (not in scope)
+- Tests for the DOM wiring: `isModalOpen`/`closest('[role="dialog"]')` board guard and `useShare` native → fallback paths (R3 advisories).
+- Surface "Más opciones" and PNG export failures in the dialog's aria-live region (R3 suggestion).
+- Pre-existing: the navbar hamburger button has no accessible name.
+- Set `NEXT_PUBLIC_SITE_URL` in Vercel if the public domain differs from the project's production domain.
+
 ## Next step
-Slice PR3 review assessment, then T7 final browser verification.
+Feature complete. User decides push/PRs (stacked-to-main, 3 slices above).
