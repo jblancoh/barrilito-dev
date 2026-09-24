@@ -35,7 +35,7 @@ Forecast: ~450 authored changed lines.
 
 ## Tasks
 - [x] T0 Sync branch with `origin/main` (fast-forward to 5c13f83); `pnpm test` 29/29 green — route: inline
-- [ ] T1 `detectRenderMode` pure function + WebGL/env probe, overrides `?mode=` and stored preference — route: delegated (writer trigger)
+- [x] T1 `detectRenderMode` pure function + WebGL/env probe, overrides `?mode=` and stored preference — route: delegated (writer trigger)
 - [ ] T2 Visible classic home (sections with `id={stop.key}`) + `HomeSwitch` in `app/page.tsx` — route: delegated
 - [ ] T3 `navigateToStop` (board event if listener, else scrollIntoView) used by navbar — route: delegated
 - [ ] T4 Runtime fallback: try/catch renderer/init, `webglcontextlost`, `shouldDegrade` FPS watchdog, ready timeout → switch to lite — route: delegated
@@ -51,6 +51,7 @@ Forecast: ~450 authored changed lines.
 
 ## Progress / evidence
 - T0: fast-forward merge of `origin/main`; tests 29 passed.
+- T1: commit `2aed8c7`. TDD: RED — `pnpm test` failed with "Cannot find module './render-mode'" (render-mode.test.ts, 11 cases). GREEN — implemented `components/game/render-mode.ts` (`detectRenderMode`, `readRenderEnv`, `storeRenderMode`); `pnpm test` 39/39 passed. `tsc --noEmit` clean.
 
 ## Next step
-T1.
+T2.
