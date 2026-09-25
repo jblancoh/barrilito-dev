@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react"
 import * as THREE from "three"
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js"
 import { toHslColor } from "./color"
+import { seededRandom, woodPlankShades, type HslShade } from "./wood"
 import {
   FACE_ROTATIONS,
   LADDERS,
@@ -92,13 +94,6 @@ interface Palette {
 
 function cssHsl(name: string): string {
   return toHslColor(getComputedStyle(document.documentElement).getPropertyValue(name))
-}
-
-function withAlpha(hsl: string, alpha: number): string {
-  const match = hsl.match(/hsl\(([^)]+)\)/)
-  const triple = (match ? match[1] : "0 0% 0%").split(/[\s,]+/).filter(Boolean)
-  const [h, s, l] = triple
-  return `hsla(${h}, ${s}, ${l}, ${alpha})`
 }
 
 function buildPalette(dark: boolean): Palette {
@@ -291,23 +286,93 @@ function buildDieTextures(pal: Palette): THREE.MeshStandardMaterial[] {
   })
 }
 
-function buildTokenGlowTexture(pal: Palette): THREE.CanvasTexture {
+const hslCss = ({ h, s, l }: HslShade, dl = 0) => `hsl(${h.toFixed(1)}, ${s.toFixed(1)}%, ${(l + dl).toFixed(1)}%)`
+
+/** Vertical plank texture for the barrel side: per-plank shades, grain streaks, dark seams. */
+function buildWoodSideTexture(): THREE.CanvasTexture {
+  const planks = 10
   const canvas = document.createElement("canvas")
-  canvas.width = canvas.height = 128
+  canvas.width = 1024
+  canvas.height = 512
   const ctx = canvas.getContext("2d")!
-  const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64)
-  gradient.addColorStop(0, withAlpha(pal.primary, 0.9))
-  gradient.addColorStop(0.45, withAlpha(pal.secondary, 0.45))
-  gradient.addColorStop(0.75, withAlpha(pal.accent, 0.18))
-  gradient.addColorStop(1, withAlpha(pal.accent, 0))
-  ctx.fillStyle = gradient
-  ctx.fillRect(0, 0, 128, 128)
+  const rand = seededRandom(11)
+  const shades = woodPlankShades(planks, 11)
+  const w = canvas.width / planks
+
+  shades.forEach((shade, k) => {
+    const x0 = k * w
+    ctx.fillStyle = hslCss(shade)
+    ctx.fillRect(x0, 0, w, canvas.height)
+    // Long wavy grain streaks running along the plank.
+    for (let g = 0; g < 26; g++) {
+      const gx = x0 + 4 + rand() * (w - 8)
+      const amp = 1 + rand() * 3
+      const freq = 0.004 + rand() * 0.01
+      const phase = rand() * Math.PI * 2
+      ctx.strokeStyle = hslCss(shade, rand() < 0.5 ? -7 - rand() * 6 : 4 + rand() * 4)
+      ctx.globalAlpha = 0.25 + rand() * 0.35
+      ctx.lineWidth = 0.6 + rand() * 1.6
+      ctx.beginPath()
+      for (let y = 0; y <= canvas.height; y += 8) {
+        const x = gx + Math.sin(y * freq + phase) * amp
+        if (y === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+      }
+      ctx.stroke()
+    }
+    // An occasional knot.
+    if (rand() < 0.4) {
+      const kx = x0 + w * (0.3 + rand() * 0.4)
+      const ky = canvas.height * (0.25 + rand() * 0.5)
+      for (let r = 10; r > 1; r -= 2.5) {
+        ctx.globalAlpha = 0.35
+        ctx.strokeStyle = hslCss(shade, -10)
+        ctx.lineWidth = 1.2
+        ctx.beginPath()
+        ctx.ellipse(kx, ky, r * 0.7, r * 1.6, 0, 0, Math.PI * 2)
+        ctx.stroke()
+      }
+    }
+    ctx.globalAlpha = 1
+    // Seam between planks.
+    ctx.fillStyle = "hsl(25, 45%, 12%)"
+    ctx.fillRect(x0, 0, 3, canvas.height)
+  })
+
+  const tex = new THREE.CanvasTexture(canvas)
+  tex.colorSpace = THREE.SRGBColorSpace
+  tex.anisotropy = 4
+  return tex
+}
+
+/** End-grain texture for the barrel lid: concentric growth rings plus plank seams. */
+function buildWoodLidTexture(): THREE.CanvasTexture {
+  const size = 512
+  const canvas = document.createElement("canvas")
+  canvas.width = canvas.height = size
+  const ctx = canvas.getContext("2d")!
+  const rand = seededRandom(5)
+  const base: HslShade = { h: 30, s: 48, l: 44 }
+  ctx.fillStyle = hslCss(base)
+  ctx.fillRect(0, 0, size, size)
+  const c = size / 2
+  for (let r = 6; r < c; r += 7 + rand() * 7) {
+    ctx.strokeStyle = hslCss(base, -6 - rand() * 8)
+    ctx.globalAlpha = 0.35 + rand() * 0.3
+    ctx.lineWidth = 1 + rand() * 2
+    ctx.beginPath()
+    ctx.ellipse(c + (rand() - 0.5) * 4, c + (rand() - 0.5) * 4, r, r * (0.96 + rand() * 0.06), 0, 0, Math.PI * 2)
+    ctx.stroke()
+  }
+  ctx.globalAlpha = 1
+  ctx.fillStyle = "hsl(25, 45%, 14%)"
+  for (let k = 1; k < 5; k++) ctx.fillRect((size / 5) * k - 1.5, 0, 3, size)
   const tex = new THREE.CanvasTexture(canvas)
   tex.colorSpace = THREE.SRGBColorSpace
   return tex
 }
 
-/** Builds the barrel token group: lathe body, hoops, staves, floating atom, glow sprite. */
+/** Builds the barrel token group: wooden lathe body and lid, iron hoops, floating atom. */
 function buildTokenGroup(): {
   group: THREE.Group
   bodyMat: THREE.MeshStandardMaterial
@@ -315,45 +380,49 @@ function buildTokenGroup(): {
   atomMat: THREE.MeshStandardMaterial
   atom: THREE.Group
   rings: THREE.Group[]
-  glow: THREE.Sprite
 } {
   const group = new THREE.Group()
   const radiusAt = (t: number) => 0.2 + 0.07 * Math.sin(Math.PI * t)
   const height = 0.62
-  const profile: THREE.Vector2[] = [new THREE.Vector2(0, 0)]
+  // Side wall only (no caps) so the plank texture isn't smeared across the top and bottom.
+  const profile: THREE.Vector2[] = []
   for (let k = 0; k <= 20; k++) {
     const t = k / 20
     profile.push(new THREE.Vector2(radiusAt(t), t * height))
   }
-  profile.push(new THREE.Vector2(0, height))
 
-  const bodyMat = new THREE.MeshStandardMaterial({ roughness: 0.4 })
-  const hoopMat = new THREE.MeshStandardMaterial({ roughness: 0.3, metalness: 0.2 })
-  const body = new THREE.Mesh(new THREE.LatheGeometry(profile, 48), bodyMat)
+  const sideMap = buildWoodSideTexture()
+  const bodyMat = new THREE.MeshStandardMaterial({
+    map: sideMap,
+    bumpMap: sideMap,
+    bumpScale: 0.6,
+    roughness: 0.68,
+    metalness: 0,
+  })
+  const body = new THREE.Mesh(new THREE.LatheGeometry(profile, 64), bodyMat)
   body.castShadow = true
+  body.receiveShadow = true
   group.add(body)
 
-  ;[0.06, 0.2, 0.8, 0.94].forEach((t) => {
-    const hoop = new THREE.Mesh(new THREE.TorusGeometry(radiusAt(t) + 0.006, 0.02, 8, 48), hoopMat)
-    hoop.rotation.x = Math.PI / 2
-    hoop.position.y = t * height
-    group.add(hoop)
+  const lidMat = new THREE.MeshStandardMaterial({ map: buildWoodLidTexture(), roughness: 0.72 })
+  ;[0, height].forEach((y) => {
+    const lid = new THREE.Mesh(new THREE.CircleGeometry(radiusAt(y / height) - 0.004, 48), lidMat)
+    lid.rotation.x = y === 0 ? Math.PI / 2 : -Math.PI / 2
+    lid.position.y = y === 0 ? 0.001 : height - 0.012
+    lid.receiveShadow = true
+    group.add(lid)
   })
 
-  for (let k = 0; k < 8; k++) {
-    const angle = (k / 8) * Math.PI * 2
-    const points: THREE.Vector3[] = []
-    for (let j = 0; j <= 10; j++) {
-      const t = 0.2 + (j / 10) * 0.6
-      const r = radiusAt(t) + 0.004
-      points.push(new THREE.Vector3(Math.sin(angle) * r, t * height, Math.cos(angle) * r))
-    }
-    const stave = new THREE.Mesh(
-      new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 12, 0.008, 5),
-      hoopMat,
-    )
-    group.add(stave)
-  }
+  const hoopMat = new THREE.MeshStandardMaterial({ color: "hsl(25, 8%, 22%)", roughness: 0.36, metalness: 0.85 })
+  ;[0.06, 0.22, 0.78, 0.94].forEach((t) => {
+    const hoop = new THREE.Mesh(new THREE.TorusGeometry(radiusAt(t) + 0.008, 0.024, 12, 64), hoopMat)
+    hoop.scale.set(1, 1, 0.7)
+    hoop.rotation.x = Math.PI / 2
+    hoop.position.y = t * height
+    hoop.castShadow = true
+    hoop.receiveShadow = true
+    group.add(hoop)
+  })
 
   const atom = new THREE.Group()
   atom.position.y = 0.98
@@ -371,14 +440,7 @@ function buildTokenGroup(): {
   })
   group.add(atom)
 
-  const glow = new THREE.Sprite(
-    new THREE.SpriteMaterial({ transparent: true, depthWrite: false }),
-  )
-  glow.scale.set(1.9, 1.9, 1)
-  glow.position.y = 0.55
-  group.add(glow)
-
-  return { group, bodyMat, hoopMat, atomMat, atom, rings, glow }
+  return { group, bodyMat, hoopMat, atomMat, atom, rings }
 }
 
 /** Builds the 6-face die mesh; textures/materials regenerated per theme via buildDieTextures. */
@@ -565,7 +627,7 @@ class BoardScene {
   private atomMat!: THREE.MeshStandardMaterial
   private atom!: THREE.Group
   private rings: THREE.Group[] = []
-  private glow!: THREE.Sprite
+  private tokenEnv?: THREE.Texture
   private die!: THREE.Mesh
   private fog: THREE.Fog | null = null
   private fogColor!: THREE.Color
@@ -791,7 +853,15 @@ class BoardScene {
     this.atomMat = built.atomMat
     this.atom = built.atom
     this.rings = built.rings
-    this.glow = built.glow
+    // Reflections for the token only: a PMREM-filtered room environment on its own materials,
+    // so the rest of the board keeps its current look.
+    const pmrem = new THREE.PMREMGenerator(this.renderer)
+    this.tokenEnv = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
+    pmrem.dispose()
+    this.token.traverse((obj) => {
+      const mat = (obj as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined
+      if (mat && mat !== this.atomMat) mat.envMap = this.tokenEnv!
+    })
     this.scene.add(this.token)
   }
 
@@ -857,15 +927,12 @@ class BoardScene {
     this.ladderMat.color.set(pal.secondary)
     this.snakes.forEach((s) => paintSnake(s, pal))
 
-    this.bodyMat.color.set(dark ? pal.foreground : "hsl(0, 0%, 12%)")
-    this.hoopMat.color.set(dark ? "hsl(0, 0%, 10%)" : "hsl(0, 0%, 96%)")
+    // Wood and iron keep their natural colors in both themes; dark mode only gets a little more
+    // environment light so the token doesn't turn muddy against the dark board.
+    this.bodyMat.envMapIntensity = dark ? 0.75 : 0.55
+    this.hoopMat.envMapIntensity = dark ? 1.4 : 1.15
     this.atomMat.color.set(pal.primary)
     this.atomMat.emissive.set(pal.primary)
-    if (this.glow.material.map) this.glow.material.map.dispose()
-    this.glow.material.map = buildTokenGlowTexture(pal)
-    this.glow.material.blending = dark ? THREE.AdditiveBlending : THREE.NormalBlending
-    this.glow.material.opacity = dark ? 0.55 : 0.45
-    this.glow.material.needsUpdate = true
 
     ;(this.ground.material as THREE.ShadowMaterial).opacity = dark ? 0.35 : 0.12
     this.hemi.intensity = dark ? 1.2 : 1.6
@@ -1239,7 +1306,6 @@ class BoardScene {
     })
     this.atom.rotation.y += dt * 0.8
     this.atom.position.y = 0.98 + Math.sin(this.t * 2) * 0.03
-    this.glow.material.opacity = (this.dark ? 0.5 : 0.4) + Math.sin(this.t * 2.2) * 0.08
 
     this.snakes.forEach((s, k) => {
       s.head.position.y = s.base + Math.sin(this.t * 2.4 + k) * 0.03
@@ -1322,6 +1388,7 @@ class BoardScene {
       if (Array.isArray(material)) material.forEach((m) => disposeMaterial(m))
       else if (material) disposeMaterial(material)
     })
+    this.tokenEnv?.dispose()
     this.renderer.dispose()
     this.renderer.domElement.remove()
   }
@@ -1330,7 +1397,7 @@ class BoardScene {
 function disposeMaterial(material: THREE.Material) {
   const withMap = material as THREE.MeshStandardMaterial
   withMap.map?.dispose()
-  ;(material as THREE.SpriteMaterial).map?.dispose()
+  if (withMap.bumpMap !== withMap.map) withMap.bumpMap?.dispose()
   material.dispose()
 }
 
