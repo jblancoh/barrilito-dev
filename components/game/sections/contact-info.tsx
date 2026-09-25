@@ -1,6 +1,6 @@
 "use client"
 
-import { Mail, MapPin, Phone } from "lucide-react"
+import { MapPin, Phone } from "lucide-react"
 import { contactInfo } from "@/lib/content"
 import type { BoardNav } from "../board-nav"
 import { ShortcutCard } from "../shortcut-card"
@@ -15,15 +15,6 @@ export function ContactInfoSection({ nav }: { nav: BoardNav }) {
           <div className="text-sm text-muted-foreground">Otras formas de ponerte en contacto conmigo.</div>
         </div>
         <div className="flex flex-col gap-6 px-6 pb-6">
-          <div className="flex items-start gap-4">
-            <div className="rounded-full bg-primary/10 p-3">
-              <Mail className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-medium">Email</h3>
-              <p className="text-muted-foreground">{contactInfo.email}</p>
-            </div>
-          </div>
           <div className="flex items-start gap-4">
             <div className="rounded-full bg-secondary/10 p-3">
               <Phone className="h-6 w-6 text-secondary" />

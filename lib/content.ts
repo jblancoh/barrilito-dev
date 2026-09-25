@@ -138,7 +138,6 @@ export const socialLinks = {
 }
 
 export const contactInfo = {
-  email: "contacto@barrilito.dev",
   phone: "+52 123 456 7890",
   location: "Ciudad de México, México",
   schedule: [

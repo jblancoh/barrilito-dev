@@ -55,7 +55,7 @@ const SUCCESS_STATE: ContactFormState = {
 
 const VALIDATION_ERROR_MESSAGE = "Revisa los campos marcados."
 const RATE_LIMIT_ERROR_MESSAGE = "Demasiados mensajes. Intenta de nuevo en unos minutos."
-const SEND_ERROR_MESSAGE = "No se pudo enviar el mensaje. Escríbeme directo a contacto@barrilito.dev."
+const SEND_ERROR_MESSAGE = "No se pudo enviar el mensaje. Intenta de nuevo más tarde."
 
 /**
  * Handles one raw contact form submission end to end. Order matters:

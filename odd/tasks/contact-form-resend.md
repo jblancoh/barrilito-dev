@@ -45,7 +45,7 @@ Work-unit commits on the feature branch; push/PR are the user's decision.
 ## Tasks
 - [ ] T0 User creates a Resend API key in the existing account, verifies `send.barrilito.dev`, and adds `RESEND_API_KEY` with `vercel env add` (user-only: secrets) — Status: pending user.
 - [x] T1 `lib/contact.ts` + `lib/contact.test.ts`: validation, honeypot, min fill time, rate limiter — route: delegated writer (2 non-trivial files).
-- [x] T2 Server Action + form wiring with Resend — route: delegated writer (2+ non-trivial files). Env: `RESEND_API_KEY` (required), `CONTACT_FROM_EMAIL`, `CONTACT_TO_EMAIL` (optional).
+- [x] T2 Server Action + form wiring with Resend — route: delegated writer (2+ non-trivial files). Env: `RESEND_API_KEY` (required), `CONTACT_FROM_EMAIL`, `CONTACT_TO_EMAIL` (required: the owner's personal Gmail, set by the user).
 - [ ] T3 (partial) Verify: tests, `tsc`, lint, build, browser submit (success, validation error, honeypot) — route: inline/per-action.
 
 ## Acceptance criteria
@@ -72,5 +72,9 @@ Work-unit commits on the feature branch; push/PR are the user's decision.
   PENDING: real delivery test once the user adds RESEND_API_KEY and verifies send.barrilito.dev.
 - RDD: range 42852c7..ff818dc declined by user; range 7eaa8bd..31264d0 (medium) declined by user.
 
+- T2b: user has no mailbox on barrilito.dev (DonDominio, no paid email) → CONTACT_TO_EMAIL required (no fallback),
+  public email removed from contact-info section and lib/content.ts, error copy "Intenta de nuevo más tarde.",
+  dead legacy components/contact-section.tsx deleted (it referenced the removed field). RED (4 failing copy asserts) → GREEN 161; tsc clean.
+
 ## Next step
-User completes T0 (Resend domain + `vercel env add RESEND_API_KEY` + `vercel env pull`); then real send test (T3).
+User completes T0 (Resend domain + `vercel env add RESEND_API_KEY` + `vercel env add CONTACT_TO_EMAIL` + `vercel env pull`); then real send test (T3).

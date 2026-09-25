@@ -115,7 +115,7 @@ describe("handleContactSubmission", () => {
     const result = await handleContactSubmission(validFields, deps)
 
     expect(result.status).toBe("error")
-    expect(result.message).toBe("No se pudo enviar el mensaje. Escríbeme directo a contacto@barrilito.dev.")
+    expect(result.message).toBe("No se pudo enviar el mensaje. Intenta de nuevo más tarde.")
     expect(send).not.toHaveBeenCalled()
     expect(errorSpy).toHaveBeenCalled()
     const logged = errorSpy.mock.calls[0].join(" ")
@@ -132,7 +132,7 @@ describe("handleContactSubmission", () => {
     const result = await handleContactSubmission(validFields, deps)
 
     expect(result.status).toBe("error")
-    expect(result.message).toBe("No se pudo enviar el mensaje. Escríbeme directo a contacto@barrilito.dev.")
+    expect(result.message).toBe("No se pudo enviar el mensaje. Intenta de nuevo más tarde.")
     expect(send).not.toHaveBeenCalled()
 
     errorSpy.mockRestore()
@@ -146,7 +146,7 @@ describe("handleContactSubmission", () => {
 
     expect(result).toEqual({
       status: "error",
-      message: "No se pudo enviar el mensaje. Escríbeme directo a contacto@barrilito.dev.",
+      message: "No se pudo enviar el mensaje. Intenta de nuevo más tarde.",
     })
   })
 
@@ -158,7 +158,7 @@ describe("handleContactSubmission", () => {
     const result = await handleContactSubmission(validFields, deps)
 
     expect(result.status).toBe("error")
-    expect(result.message).toBe("No se pudo enviar el mensaje. Escríbeme directo a contacto@barrilito.dev.")
+    expect(result.message).toBe("No se pudo enviar el mensaje. Intenta de nuevo más tarde.")
 
     errorSpy.mockRestore()
   })
