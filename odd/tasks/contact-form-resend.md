@@ -70,7 +70,7 @@ Work-unit commits on the feature branch; push/PR are the user's decision.
   valid message without RESEND_API_KEY → friendly error + server log "missing Resend configuration" (no secrets);
   honeypot filled → fake success, no send; "Enviar otro" resets fields and startedAt; honeypot not visible.
   PENDING: real delivery test once the user adds RESEND_API_KEY and verifies send.barrilito.dev.
-- RDD: range 42852c7..ff818dc declined by user.
+- RDD: range 42852c7..ff818dc declined by user; range 7eaa8bd..31264d0 (medium) declined by user.
 
 ## Next step
 User completes T0 (Resend domain + `vercel env add RESEND_API_KEY` + `vercel env pull`); then real send test (T3).
