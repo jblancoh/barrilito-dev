@@ -71,3 +71,40 @@ export function stepWheelGate(state: WheelGateState, input: WheelGateInput): Whe
   }
   return { state: { acc, lastWheel, tainted }, action: "none" }
 }
+
+/** DOM-facing effects `dispatchWheel` needs, kept separate from the pure gate so the wiring is testable without a DOM. */
+export interface WheelDispatchDeps {
+  /** Whether this event scrolled the section panel instead of reaching the board. */
+  panelScrolls: boolean
+  preventDefault(): void
+  /** Whether the board itself can't move right now (mid-animation, confetti, etc). */
+  isBusy(): boolean
+  /** `performance.now()` timestamp before which the board stays locked from the last move. */
+  lockUntil(): number
+  forward(): void
+  back(): void
+}
+
+/**
+ * Wires a raw wheel event into the pure gate and its side effects: whether to call
+ * `preventDefault`, whether the board is currently blocked, and which action (if any)
+ * to dispatch. Mirrors the board's `onWheel` handler exactly, minus the DOM.
+ */
+export function dispatchWheel(
+  gate: WheelGateState,
+  event: { now: number; deltaY: number },
+  deps: WheelDispatchDeps,
+): WheelGateState {
+  const { now, deltaY } = event
+
+  if (deps.panelScrolls) {
+    return stepWheelGate(gate, { now, deltaY, panelConsumed: true, blocked: false }).state
+  }
+
+  deps.preventDefault()
+  const blocked = deps.isBusy() || now < deps.lockUntil()
+  const result = stepWheelGate(gate, { now, deltaY, panelConsumed: false, blocked })
+  if (result.action === "forward") deps.forward()
+  else if (result.action === "back") deps.back()
+  return result.state
+}

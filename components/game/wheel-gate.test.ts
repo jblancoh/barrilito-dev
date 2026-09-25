@@ -1,5 +1,17 @@
-import { describe, expect, it } from "vitest"
-import { INITIAL_WHEEL_GATE, stepWheelGate, type WheelGateState } from "./wheel-gate"
+import { describe, expect, it, vi } from "vitest"
+import { dispatchWheel, INITIAL_WHEEL_GATE, PANEL_SETTLE_MS, stepWheelGate, type WheelDispatchDeps, type WheelGateState } from "./wheel-gate"
+
+function makeDeps(overrides: Partial<WheelDispatchDeps> = {}): WheelDispatchDeps {
+  return {
+    panelScrolls: false,
+    preventDefault: vi.fn(),
+    isBusy: vi.fn(() => false),
+    lockUntil: vi.fn(() => 0),
+    forward: vi.fn(),
+    back: vi.fn(),
+    ...overrides,
+  }
+}
 
 describe("stepWheelGate", () => {
   it("never advances while a panel-scrolling gesture continues at the edge", () => {
@@ -92,5 +104,98 @@ describe("stepWheelGate", () => {
       expect(result.action).toBe("none")
       now += 16
     }
+  })
+
+  it("stays tainted at the exact PANEL_SETTLE_MS boundary (strict greater-than)", () => {
+    let state: WheelGateState = INITIAL_WHEEL_GATE
+    ;({ state } = stepWheelGate(state, { now: 1000, deltaY: 60, panelConsumed: true, blocked: false }))
+
+    const atBoundary = stepWheelGate(state, {
+      now: 1000 + PANEL_SETTLE_MS,
+      deltaY: 60,
+      panelConsumed: false,
+      blocked: false,
+    })
+    expect(atBoundary.action).toBe("none")
+    expect(atBoundary.state.tainted).toBe(true)
+  })
+
+  it("clears the taint one millisecond past PANEL_SETTLE_MS", () => {
+    let state: WheelGateState = INITIAL_WHEEL_GATE
+    ;({ state } = stepWheelGate(state, { now: 1000, deltaY: 60, panelConsumed: true, blocked: false }))
+
+    const pastBoundary = stepWheelGate(state, {
+      now: 1000 + PANEL_SETTLE_MS + 1,
+      deltaY: 60,
+      panelConsumed: false,
+      blocked: false,
+    })
+    expect(pastBoundary.action).toBe("forward")
+    expect(pastBoundary.state.tainted).toBe(false)
+  })
+})
+
+describe("dispatchWheel", () => {
+  it("skips preventDefault when the panel consumes the event, and still taints the gate", () => {
+    const deps = makeDeps({ panelScrolls: true })
+    const state = dispatchWheel(INITIAL_WHEEL_GATE, { now: 1000, deltaY: 60 }, deps)
+
+    expect(deps.preventDefault).not.toHaveBeenCalled()
+    expect(state.tainted).toBe(true)
+    expect(deps.forward).not.toHaveBeenCalled()
+    expect(deps.back).not.toHaveBeenCalled()
+  })
+
+  it("calls preventDefault and blocks when the board reports busy", () => {
+    const deps = makeDeps({ isBusy: vi.fn(() => true) })
+    const state = dispatchWheel({ acc: 30, lastWheel: 990, tainted: false }, { now: 1000, deltaY: 30 }, deps)
+
+    expect(deps.preventDefault).toHaveBeenCalledTimes(1)
+    expect(state.acc).toBe(0)
+    expect(deps.forward).not.toHaveBeenCalled()
+    expect(deps.back).not.toHaveBeenCalled()
+  })
+
+  it("blocks when now is still before the lock-until timestamp", () => {
+    const deps = makeDeps({ lockUntil: vi.fn(() => 2000) })
+    const state = dispatchWheel({ acc: 30, lastWheel: 990, tainted: false }, { now: 1000, deltaY: 30 }, deps)
+
+    expect(deps.preventDefault).toHaveBeenCalledTimes(1)
+    expect(state.acc).toBe(0)
+    expect(deps.forward).not.toHaveBeenCalled()
+  })
+
+  it("dispatches forward once the accumulated deltaY crosses the threshold", () => {
+    const deps = makeDeps()
+    dispatchWheel({ acc: 30, lastWheel: 990, tainted: false }, { now: 1000, deltaY: 20 }, deps)
+
+    expect(deps.forward).toHaveBeenCalledTimes(1)
+    expect(deps.back).not.toHaveBeenCalled()
+  })
+
+  it("dispatches back once the accumulated deltaY crosses the negative threshold", () => {
+    const deps = makeDeps()
+    dispatchWheel({ acc: -30, lastWheel: 990, tainted: false }, { now: 1000, deltaY: -20 }, deps)
+
+    expect(deps.back).toHaveBeenCalledTimes(1)
+    expect(deps.forward).not.toHaveBeenCalled()
+  })
+
+  it("keeps the taint and advances lastWheel when a blocked event lands inside a tainted gesture", () => {
+    const taintDeps = makeDeps({ panelScrolls: true })
+    let state = dispatchWheel(INITIAL_WHEEL_GATE, { now: 1000, deltaY: 60 }, taintDeps)
+    expect(state.tainted).toBe(true)
+
+    const blockedDeps = makeDeps({ isBusy: vi.fn(() => true) })
+    state = dispatchWheel(state, { now: 1050, deltaY: 60 }, blockedDeps)
+
+    expect(state.tainted).toBe(true)
+    expect(state.lastWheel).toBe(1050)
+
+    // The taint window now extends from this later lastWheel: a pause measured from 1000
+    // (over PANEL_SETTLE_MS) would have cleared it, but measuring from the advanced 1050
+    // still finds it tainted just past the same wall-clock point.
+    const stillWithinWindow = dispatchWheel(state, { now: 1050 + PANEL_SETTLE_MS, deltaY: 60 }, makeDeps())
+    expect(stillWithinWindow.tainted).toBe(true)
   })
 })

@@ -10,7 +10,7 @@ import { HudStatus } from "./hud-status"
 import { SectionPanel } from "./section-panel"
 import { renderSection } from "./section-registry"
 import { useBoardScene } from "./use-board-scene"
-import { INITIAL_WHEEL_GATE, stepWheelGate } from "./wheel-gate"
+import { dispatchWheel, INITIAL_WHEEL_GATE } from "./wheel-gate"
 
 /** STOPS index matching `location.hash` at mount time, or 0 (the default stop) when absent/invalid. */
 function initialStopIndexFromHash(): number {
@@ -138,16 +138,18 @@ export function BoardGame({ onFallback }: BoardGameProps = {}) {
       // If this gesture scrolled the panel at any point, it stays "tainted" until a
       // quiet pause: otherwise the same trackpad momentum that hit the panel's edge
       // would fall straight through into rolling the die before the visitor finishes reading.
-      if (panelCanScroll(panelRef.current, e.target, e.deltaY)) {
-        gate = stepWheelGate(gate, { now, deltaY: e.deltaY, panelConsumed: true, blocked: false }).state
-        return
-      }
-      e.preventDefault()
-      const blocked = api.isBusy() || now < api.getLockUntil()
-      const result = stepWheelGate(gate, { now, deltaY: e.deltaY, panelConsumed: false, blocked })
-      gate = result.state
-      if (result.action === "forward") api.forward()
-      else if (result.action === "back") api.back()
+      gate = dispatchWheel(
+        gate,
+        { now, deltaY: e.deltaY },
+        {
+          panelScrolls: panelCanScroll(panelRef.current, e.target, e.deltaY),
+          preventDefault: () => e.preventDefault(),
+          isBusy: api.isBusy,
+          lockUntil: api.getLockUntil,
+          forward: api.forward,
+          back: api.back,
+        },
+      )
     }
 
     const onKey = (e: KeyboardEvent) => {
