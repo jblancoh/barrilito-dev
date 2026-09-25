@@ -11,7 +11,8 @@ export const WOOD_HUE_RANGE: readonly [number, number] = [22, 34]
 /** Plank lightness, in percent: dark enough to read as wood, light enough to show grain. */
 export const WOOD_LIGHTNESS_RANGE: readonly [number, number] = [30, 46]
 
-const MIN_ADJACENT_STEP = 3
+/** Minimum lightness gap, in percent, between any two neighbouring planks (wrap-around included). */
+export const MIN_ADJACENT_STEP = 3
 
 /** Small deterministic PRNG (mulberry32) so the texture looks the same on every load. */
 export function seededRandom(seed: number): () => number {
@@ -25,20 +26,25 @@ export function seededRandom(seed: number): () => number {
   }
 }
 
-/** Per-plank shades for a barrel of `count` staves; adjacent planks always differ in lightness. */
+/**
+ * Per-plank shades for a barrel of `count` staves. Planks alternate darker/lighter around the
+ * middle lightness so neighbours never blend into one plank; the barrel is cyclic, so with an odd
+ * count the last plank sits exactly on the middle to stay apart from both of its neighbours.
+ */
 export function woodPlankShades(count: number, seed: number): HslShade[] {
   const rand = seededRandom(seed)
   const [hMin, hMax] = WOOD_HUE_RANGE
   const [lMin, lMax] = WOOD_LIGHTNESS_RANGE
   const mid = (lMin + lMax) / 2
+  const maxSpread = (lMax - lMin) / 2
   return Array.from({ length: count }, (_, k) => {
-    // Alternate darker/lighter around the middle so neighbours never blend into one plank.
+    const isOddSeam = count % 2 === 1 && k === count - 1
     const side = k % 2 === 0 ? -1 : 1
-    const spread = MIN_ADJACENT_STEP / 2 + rand() * ((lMax - lMin) / 2 - MIN_ADJACENT_STEP / 2)
+    const spread = MIN_ADJACENT_STEP + rand() * (maxSpread - MIN_ADJACENT_STEP)
     return {
       h: hMin + rand() * (hMax - hMin),
       s: 42 + rand() * 18,
-      l: mid + side * spread,
+      l: isOddSeam ? mid : mid + side * spread,
     }
   })
 }

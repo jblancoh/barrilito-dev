@@ -952,8 +952,13 @@ class BoardScene {
     this.rings = built.rings
     // Reflections for the token only: a PMREM-filtered room environment on its own materials,
     // so the rest of the board keeps its current look.
+    // The room scene and the generator are only needed to bake the map, so free their GPU
+    // resources right away; a previous map (if the token is ever rebuilt) is released too.
     const pmrem = new THREE.PMREMGenerator(this.renderer)
-    this.tokenEnv = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
+    const room = new RoomEnvironment()
+    this.tokenEnv?.dispose()
+    this.tokenEnv = pmrem.fromScene(room, 0.04).texture
+    room.dispose()
     pmrem.dispose()
     this.token.traverse((obj) => {
       const mat = (obj as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined

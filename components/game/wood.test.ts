@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { WOOD_HUE_RANGE, WOOD_LIGHTNESS_RANGE, woodPlankShades } from "./wood"
+import { MIN_ADJACENT_STEP, WOOD_HUE_RANGE, WOOD_LIGHTNESS_RANGE, woodPlankShades } from "./wood"
 
 describe("woodPlankShades", () => {
   it("returns one shade per plank", () => {
@@ -25,11 +25,11 @@ describe("woodPlankShades", () => {
     }
   })
 
-  it("makes adjacent planks visibly different", () => {
-    const shades = woodPlankShades(10, 7)
+  it.each([9, 10, 11])("keeps every adjacent pair apart, including the wrap-around seam (%i planks)", (count) => {
+    const shades = woodPlankShades(count, 7)
     shades.forEach((shade, k) => {
       const next = shades[(k + 1) % shades.length]
-      expect(Math.abs(shade.l - next.l) + Math.abs(shade.h - next.h)).toBeGreaterThanOrEqual(1.5)
+      expect(Math.abs(shade.l - next.l)).toBeGreaterThanOrEqual(MIN_ADJACENT_STEP)
     })
   })
 })
