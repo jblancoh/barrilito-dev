@@ -76,5 +76,8 @@ Work-unit commits on the feature branch; push/PR are the user's decision.
   public email removed from contact-info section and lib/content.ts, error copy "Intenta de nuevo más tarde.",
   dead legacy components/contact-section.tsx deleted (it referenced the removed field). RED (4 failing copy asserts) → GREEN 161; tsc clean.
 
+- CONTACT_TO_EMAIL set in Vercel (production, preview, development) to the owner's personal Gmail.
+- contactInfo phone/location updated to the real values (+52 993 360 0042, Villahermosa, Tabasco); verified in browser.
+
 ## Next step
-User completes T0 (Resend domain + `vercel env add RESEND_API_KEY` + `vercel env add CONTACT_TO_EMAIL` + `vercel env pull`); then real send test (T3).
+User completes T0 (Resend domain + `vercel env add RESEND_API_KEY` + `vercel env pull`); then real send test (T3).

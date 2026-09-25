@@ -138,8 +138,8 @@ export const socialLinks = {
 }
 
 export const contactInfo = {
-  phone: "+52 123 456 7890",
-  location: "Ciudad de México, México",
+  phone: "+52 993 360 0042",
+  location: "Villahermosa, Tabasco, México",
   schedule: [
     { days: "Lunes - Viernes", hours: "9:00 AM - 6:00 PM" },
     { days: "Sábado", hours: "10:00 AM - 2:00 PM" },
