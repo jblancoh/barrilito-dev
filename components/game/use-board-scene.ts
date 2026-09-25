@@ -420,10 +420,12 @@ function buildTokenGroup(): {
   group.add(body)
 
   const lidMat = new THREE.MeshStandardMaterial({ map: buildWoodLidTexture(), roughness: 0.72 })
+  // Lids sit flush with the rim, at the wall's exact radius and segment count, so no see-through
+  // ring opens between lid and wall (the single-sided wall is culled from the inside).
   ;[0, height].forEach((y) => {
-    const lid = new THREE.Mesh(new THREE.CircleGeometry(radiusAt(y / height) - 0.004, 48), lidMat)
+    const lid = new THREE.Mesh(new THREE.CircleGeometry(radiusAt(y / height), 64), lidMat)
     lid.rotation.x = y === 0 ? Math.PI / 2 : -Math.PI / 2
-    lid.position.y = y === 0 ? 0.001 : height - 0.012
+    lid.position.y = y
     lid.receiveShadow = true
     group.add(lid)
   })
