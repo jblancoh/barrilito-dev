@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState, type RefObject } from "react"
 import * as THREE from "three"
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js"
 import { toHslColor } from "./color"
+import { isModestDevice } from "./device-tier"
+import { shouldDegrade } from "./fps-watchdog"
 import { seededRandom, woodPlankShades, type HslShade } from "./wood"
 import {
   FACE_ROTATIONS,
@@ -51,8 +53,21 @@ export interface UseBoardSceneOptions {
   speed?: number
   /** Whether the META arrival should trigger confetti (default true). */
   confetti?: boolean
+  /**
+   * STOPS index the board should start on, placed directly with no
+   * animated walk and no dice roll (default 0). Used to deep-link into a
+   * stop from the URL hash — see board-game.tsx.
+   */
+  initialStopIndex?: number
   /** Called after the arrival animation settles on a new stop (e.g. to reset panel scroll). */
   onArrive?: () => void
+  /**
+   * Called at most once if the board can't run: renderer/init failure, a
+   * lost WebGL context, sustained low FPS, or never reaching `ready`
+   * within the startup timeout. HomeSwitch uses this to fall back to the
+   * classic home.
+   */
+  onFallback?: (reason: string) => void
 }
 
 export interface BoardSceneApi {
@@ -602,10 +617,30 @@ interface BoardSceneOpts {
   camera: CameraMode
   speed: number
   confetti: boolean
+  /** STOPS index to place the token on at construction time (default 0), clamped to a valid index. */
+  initialStopIndex?: number
   onState: (state: BoardSceneState) => void
   onLayout: (layout: BoardSceneLayout) => void
   onArrive?: () => void
+  /** Reports a fatal or degraded condition; the hook forwards this to `onFallback` at most once. */
+  onError: (reason: string) => void
 }
+
+/** Clamps a requested initial stop index to a valid STOPS index, defaulting to 0. */
+function clampStopIndex(index: number | undefined): number {
+  if (index === undefined || Number.isNaN(index)) return 0
+  return Math.min(Math.max(index, 0), STOPS.length - 1)
+}
+
+/** How long after render-loop start the FPS watchdog samples frames before judging. */
+const FPS_SAMPLE_WINDOW_MS = 3000
+const FPS_SAMPLE_MAX = 240
+/** If the scene never reaches `ready` within this long, treat it as a fatal failure. */
+const READY_TIMEOUT_MS = 8000
+/** Beyond this, extra device pixels cost more than they're worth visually. */
+const MAX_PIXEL_RATIO = 1.5
+const SHADOW_MAP_SIZE = 2048
+const SHADOW_MAP_SIZE_MODEST = 1024
 
 class BoardScene {
   private host: HTMLDivElement
@@ -657,13 +692,18 @@ class BoardScene {
   private reducedMotion: boolean
   private reducedMotionQuery: MediaQueryList | null = null
 
-  private state = {
-    stop: 0,
-    sq: 1,
-    moving: false,
-    rolling: false,
-    roll: null as number | null,
-    ready: false,
+  private samplingFrameTimes: number[] = []
+  private samplingActive = false
+  private samplingStartedAt = 0
+  private errorReported = false
+
+  private state: {
+    stop: number
+    sq: number
+    moving: boolean
+    rolling: boolean
+    roll: number | null
+    ready: boolean
   }
 
   constructor(private opts: BoardSceneOpts) {
@@ -672,6 +712,15 @@ class BoardScene {
     this.cameraMode = opts.camera
     this.speed = clamp(opts.speed, 0.5, 2)
     this.confettiEnabled = opts.confetti
+    const initialStopIndex = clampStopIndex(opts.initialStopIndex)
+    this.state = {
+      stop: initialStopIndex,
+      sq: STOPS[initialStopIndex].sq,
+      moving: false,
+      rolling: false,
+      roll: null,
+      ready: false,
+    }
     this.reducedMotion =
       typeof window !== "undefined" && window.matchMedia
         ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -680,11 +729,27 @@ class BoardScene {
       this.reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
       this.reducedMotionQuery.addEventListener?.("change", this.onReducedMotionChange)
     }
-    this.init().catch((err) => console.error("[board-scene] init failed", err))
+    this.init().catch((err) => {
+      console.error("[board-scene] init failed", err)
+      this.reportError("init-failed")
+    })
   }
 
   private onReducedMotionChange = (e: MediaQueryListEvent) => {
     this.reducedMotion = e.matches
+  }
+
+  /** Reports a fatal/degraded condition to the hook at most once. */
+  private reportError(reason: string) {
+    if (this.errorReported) return
+    this.errorReported = true
+    this.opts.onError(reason)
+  }
+
+  private onContextLost = (event: Event) => {
+    event.preventDefault()
+    console.error("[board-scene] WebGL context lost")
+    this.reportError("context-lost")
   }
 
   private emitState() {
@@ -707,11 +772,24 @@ class BoardScene {
       // Fonts may fail to load in some environments; textures still render with fallbacks.
     }
 
-    const renderer = (this.renderer = new THREE.WebGLRenderer({ antialias: true }))
-    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1))
+    const modest = isModestDevice({
+      hardwareConcurrency: typeof navigator !== "undefined" ? navigator.hardwareConcurrency : undefined,
+      viewportWidth: this.host.clientWidth || window.innerWidth,
+    })
+
+    let renderer: THREE.WebGLRenderer
+    try {
+      renderer = this.renderer = new THREE.WebGLRenderer({ antialias: !modest })
+    } catch (err) {
+      console.error("[board-scene] renderer creation failed", err)
+      this.reportError("renderer-failed")
+      return
+    }
+    renderer.setPixelRatio(Math.min(MAX_PIXEL_RATIO, window.devicePixelRatio || 1))
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
     renderer.domElement.style.cssText = "position:absolute;inset:0;width:100%;height:100%;display:block;"
+    renderer.domElement.addEventListener("webglcontextlost", this.onContextLost)
     this.host.appendChild(renderer.domElement)
 
     const scene = (this.scene = new THREE.Scene())
@@ -726,7 +804,8 @@ class BoardScene {
     const sun = (this.sun = new THREE.DirectionalLight(0xffffff, 2.0))
     sun.position.set(4, 10, 6)
     sun.castShadow = true
-    sun.shadow.mapSize.set(2048, 2048)
+    const shadowMapSize = modest ? SHADOW_MAP_SIZE_MODEST : SHADOW_MAP_SIZE
+    sun.shadow.mapSize.set(shadowMapSize, shadowMapSize)
     Object.assign(sun.shadow.camera, { left: -7, right: 7, top: 7, bottom: -7, near: 1, far: 30 })
     sun.shadow.bias = -0.0006
     scene.add(sun)
@@ -744,18 +823,36 @@ class BoardScene {
     this.buildDie()
     this.applyTheme(this.dark)
 
-    this.token.position.copy(this.tokenAt(1))
-    this.die.position.copy(this.dieRest(1))
+    // Placed directly at the (possibly deep-linked) initial stop's square — no animated
+    // walk from square 1 and no dice roll, matching the state set in the constructor.
+    this.token.position.copy(this.tokenAt(this.state.sq))
+    this.die.position.copy(this.dieRest(this.state.sq))
     this.die.rotation.set(0, 0.6, 0)
 
     this.ro = new ResizeObserver(() => this.resize())
     this.ro.observe(this.host)
     this.resize()
 
+    document.addEventListener("visibilitychange", this.onVisibilityChange)
     this.last = performance.now()
     this.loop()
     this.state.ready = true
     this.emitState()
+    this.samplingActive = true
+    this.samplingStartedAt = performance.now()
+    this.samplingFrameTimes = []
+  }
+
+  /** Stops rendering while the tab is hidden and resumes cleanly when it's shown again. */
+  private onVisibilityChange = () => {
+    if (document.hidden) {
+      cancelAnimationFrame(this.raf)
+      this.raf = 0
+      return
+    }
+    if (this.raf) return // already running
+    this.last = performance.now()
+    this.loop()
   }
 
   private pos(square: number) {
@@ -1221,6 +1318,7 @@ class BoardScene {
 
   isBusy = () => this.busy
   getLockUntil = () => this.lockUntil
+  isReady = () => this.state.ready
 
   /* -------------------- fx -------------------- */
 
@@ -1301,6 +1399,14 @@ class BoardScene {
     this.runQueue(sdt)
     this.updateFx(dt)
 
+    if (this.samplingActive) {
+      this.samplingFrameTimes.push(dt * 1000)
+      if (now - this.samplingStartedAt >= FPS_SAMPLE_WINDOW_MS || this.samplingFrameTimes.length >= FPS_SAMPLE_MAX) {
+        this.samplingActive = false
+        if (shouldDegrade(this.samplingFrameTimes)) this.reportError("low-fps")
+      }
+    }
+
     this.rings.forEach((r, k) => {
       r.rotation.y += dt * (1.4 + k * 0.3)
     })
@@ -1380,6 +1486,8 @@ class BoardScene {
     cancelAnimationFrame(this.raf)
     this.ro?.disconnect()
     this.reducedMotionQuery?.removeEventListener?.("change", this.onReducedMotionChange)
+    this.renderer?.domElement.removeEventListener("webglcontextlost", this.onContextLost)
+    document.removeEventListener("visibilitychange", this.onVisibilityChange)
     if (!this.scene) return
     this.scene.traverse((obj) => {
       const mesh = obj as THREE.Mesh
@@ -1409,14 +1517,17 @@ export function useBoardScene(
   hostRef: RefObject<HTMLDivElement | null>,
   options: UseBoardSceneOptions,
 ): UseBoardSceneResult {
-  const [state, setState] = useState<BoardSceneState>({
-    stop: 0,
-    sq: 1,
-    moving: false,
-    rolling: false,
-    roll: null,
-    statusText: "Tu turno",
-    ready: false,
+  const [state, setState] = useState<BoardSceneState>(() => {
+    const stopIndex = clampStopIndex(options.initialStopIndex)
+    return {
+      stop: stopIndex,
+      sq: STOPS[stopIndex].sq,
+      moving: false,
+      rolling: false,
+      roll: null,
+      statusText: "Tu turno",
+      ready: false,
+    }
   })
   const [layout, setLayout] = useState<BoardSceneLayout>({
     narrow: false,
@@ -1431,18 +1542,37 @@ export function useBoardScene(
   useEffect(() => {
     const host = hostRef.current
     if (!host) return
+
+    // Reported to the caller (HomeSwitch) at most once, whichever comes
+    // first: a fatal scene error or never reaching `ready` in time.
+    let fallbackReported = false
+    const reportFallback = (reason: string) => {
+      if (fallbackReported) return
+      fallbackReported = true
+      console.warn(`[board-scene] falling back to lite mode: ${reason}`)
+      optionsRef.current.onFallback?.(reason)
+    }
+
     const scene = new BoardScene({
       host,
       dark: document.documentElement.classList.contains("dark"),
       camera: optionsRef.current.camera ?? "B",
       speed: optionsRef.current.speed ?? 1,
       confetti: optionsRef.current.confetti ?? true,
+      initialStopIndex: optionsRef.current.initialStopIndex,
       onState: setState,
       onLayout: setLayout,
       onArrive: () => optionsRef.current.onArrive?.(),
+      onError: reportFallback,
     })
     sceneRef.current = scene
+
+    const readyTimeout = window.setTimeout(() => {
+      if (!scene.isReady()) reportFallback("timeout")
+    }, READY_TIMEOUT_MS)
+
     return () => {
+      window.clearTimeout(readyTimeout)
       scene.dispose()
       sceneRef.current = null
     }

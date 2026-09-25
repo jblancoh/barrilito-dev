@@ -1,19 +1,24 @@
 "use client"
 
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useTheme } from "next-themes"
+import { parseStopHash, shouldSyncStopHash, withStopHash } from "@/lib/share"
 import { STOPS, type StopKey } from "./board-config"
-import { onBoardGoTo } from "./board-events"
+import { onBoardGoTo, shouldIgnoreBoardInput } from "./board-events"
 import type { BoardNav } from "./board-nav"
 import { HudStatus } from "./hud-status"
 import { SectionPanel } from "./section-panel"
+import { renderSection } from "./section-registry"
 import { useBoardScene } from "./use-board-scene"
-import { AboutSection } from "./sections/about"
-import { SkillsSection } from "./sections/skills"
-import { ProjectsSection } from "./sections/projects"
-import { ServicesSection } from "./sections/services"
-import { ContactInfoSection } from "./sections/contact-info"
-import { ContactFormSection } from "./sections/contact-form"
+
+/** STOPS index matching `location.hash` at mount time, or 0 (the default stop) when absent/invalid. */
+function initialStopIndexFromHash(): number {
+  if (typeof window === "undefined") return 0
+  const stopKey = parseStopHash(window.location.hash)
+  if (!stopKey) return 0
+  const index = STOPS.findIndex((s) => s.key === stopKey)
+  return index >= 0 ? index : 0
+}
 
 const CAMERA = "B" as const
 
@@ -23,18 +28,62 @@ function panelCanScroll(panel: HTMLDivElement | null, target: EventTarget | null
   return deltaY > 0 ? panel.scrollTop + panel.clientHeight < panel.scrollHeight - 2 : panel.scrollTop > 0
 }
 
-export function BoardGame() {
+/**
+ * Whether any modal dialog (e.g. the share dialog) is currently open
+ * anywhere in the document — checked fresh at event time rather than
+ * cached, and deliberately DOM-based instead of coupling the board to any
+ * particular feature's React state.
+ */
+function isModalOpen(): boolean {
+  if (typeof document === "undefined") return false
+  return document.querySelector('[role="dialog"][data-state="open"]') !== null
+}
+
+/** Reads the bits of an event target that `shouldIgnoreBoardInput` needs. */
+function describeInputTarget(target: EventTarget | null): {
+  tag: string | null
+  isContentEditable: boolean
+  inDialog: boolean
+} {
+  if (!(target instanceof HTMLElement)) return { tag: null, isContentEditable: false, inDialog: false }
+  return {
+    tag: target.tagName,
+    isContentEditable: target.isContentEditable,
+    inDialog: target.closest('[role="dialog"]') !== null,
+  }
+}
+
+export interface BoardGameProps {
+  /**
+   * Invoked at most once when the board can't run (renderer/init failure,
+   * a lost WebGL context, sustained low FPS, or never reaching ready
+   * within the startup timeout — see use-board-scene.ts). HomeSwitch uses
+   * it to fall back to the classic home.
+   */
+  onFallback?: (reason: string) => void
+}
+
+export function BoardGame({ onFallback }: BoardGameProps = {}) {
   const { resolvedTheme } = useTheme()
   const dark = resolvedTheme !== "light"
 
+  const onFallbackRef = useRef(onFallback)
+  onFallbackRef.current = onFallback
+
   const hostRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
+
+  // Read once at mount: a deep-linked hash (e.g. "/#projects") places the board directly
+  // on that stop, with no animated walk and no dice roll (see use-board-scene.ts).
+  const [initialStopIndex] = useState(initialStopIndexFromHash)
 
   const { api, state, layout } = useBoardScene(hostRef, {
     dark,
     camera: CAMERA,
     speed: 1,
     confetti: true,
+    initialStopIndex,
+    onFallback: (reason: string) => onFallbackRef.current?.(reason),
     onArrive: () => {
       if (panelRef.current) panelRef.current.scrollTop = 0
     },
@@ -54,12 +103,37 @@ export function BoardGame() {
   // Navbar (rendered above the board in app/layout.tsx) asks us to goTo a stop.
   useEffect(() => onBoardGoTo(({ stopKey }) => nav.goTo(stopKey)), [nav])
 
+  // Keep the address bar's hash in sync with the current stop, via replaceState (never
+  // pushState, so moving through the board doesn't spam history). Mounting on the initial
+  // stop of a hash-less URL leaves the address bar untouched (see shouldSyncStopHash).
+  useEffect(() => {
+    const stopKey = STOPS[state.stop]?.key
+    if (!stopKey) return
+    const onInitialStop = state.stop === initialStopIndex
+    if (!shouldSyncStopHash({ currentHash: window.location.hash, stopKey, onInitialStop })) return
+    window.history.replaceState(window.history.state, "", withStopHash(window.location.href, stopKey))
+  }, [state.stop, initialStopIndex])
+
+  // The user edited or pasted a new hash (e.g. "#projects"): move the board there.
+  useEffect(() => {
+    const onHashChange = () => {
+      const stopKey = parseStopHash(window.location.hash)
+      if (stopKey) nav.goTo(stopKey)
+    }
+    window.addEventListener("hashchange", onHashChange)
+    return () => window.removeEventListener("hashchange", onHashChange)
+  }, [nav])
+
   // Wheel / keyboard / touch input, mirroring the design reference exactly.
   useEffect(() => {
     let acc = 0
     let lastWheel = 0
 
     const onWheel = (e: WheelEvent) => {
+      const target = describeInputTarget(e.target)
+      if (shouldIgnoreBoardInput({ targetTag: target.tag, targetIsContentEditable: target.isContentEditable, targetInDialog: target.inDialog, modalOpen: isModalOpen() })) {
+        return
+      }
       if (panelCanScroll(panelRef.current, e.target, e.deltaY)) return
       e.preventDefault()
       const now = performance.now()
@@ -80,8 +154,10 @@ export function BoardGame() {
     }
 
     const onKey = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement | null)?.tagName
-      if (tag === "INPUT" || tag === "TEXTAREA") return
+      const target = describeInputTarget(e.target)
+      if (shouldIgnoreBoardInput({ targetTag: target.tag, targetIsContentEditable: target.isContentEditable, targetInDialog: target.inDialog, modalOpen: isModalOpen() })) {
+        return
+      }
       if (e.key === "ArrowDown" || e.key === "PageDown" || e.key === " ") {
         e.preventDefault()
         api.forward()
@@ -94,11 +170,23 @@ export function BoardGame() {
 
     let touchStartY = 0
     let touchStartTarget: EventTarget | null = null
+    // Only a gesture whose touchstart the board accepted may move it on touchend, so an
+    // ignored start (dialog open) can't pair with a later end using stale coordinates.
+    let touchTracked = false
     const onTouchStart = (e: TouchEvent) => {
+      const target = describeInputTarget(e.target)
+      touchTracked = !shouldIgnoreBoardInput({ targetTag: target.tag, targetIsContentEditable: target.isContentEditable, targetInDialog: target.inDialog, modalOpen: isModalOpen() })
+      if (!touchTracked) return
       touchStartY = e.touches[0].clientY
       touchStartTarget = e.target
     }
     const onTouchEnd = (e: TouchEvent) => {
+      if (!touchTracked) return
+      touchTracked = false
+      const target = describeInputTarget(e.target)
+      if (shouldIgnoreBoardInput({ targetTag: target.tag, targetIsContentEditable: target.isContentEditable, targetInDialog: target.inDialog, modalOpen: isModalOpen() })) {
+        return
+      }
       const dy = touchStartY - e.changedTouches[0].clientY
       const panel = panelRef.current
       if (
@@ -164,21 +252,4 @@ export function BoardGame() {
       </SectionPanel>
     </div>
   )
-}
-
-function renderSection(key: StopKey, nav: BoardNav) {
-  switch (key) {
-    case "about":
-      return <AboutSection nav={nav} />
-    case "skills":
-      return <SkillsSection />
-    case "projects":
-      return <ProjectsSection nav={nav} />
-    case "services":
-      return <ServicesSection nav={nav} />
-    case "info":
-      return <ContactInfoSection nav={nav} />
-    case "contact":
-      return <ContactFormSection nav={nav} />
-  }
 }
