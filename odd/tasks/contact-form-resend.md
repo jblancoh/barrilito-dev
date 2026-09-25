@@ -13,10 +13,10 @@ or Server Action. The user chose option 1 (email via the Vercel Marketplace Rese
 anti-spam protection.
 
 ## Scope
-- Provision Resend via Vercel Marketplace (`resend/resend-email`, domain `send.barrilito.dev`, region `us-east-1`).
+- Use the user's EXISTING Resend account (not the Vercel Marketplace integration: user already has an account and wants to avoid extra Vercel billing). API key stored as Vercel env var `RESEND_API_KEY`, entered by the user. Sending domain `send.barrilito.dev` (configurable).
 - New pure module `lib/contact.ts` (+ test): payload validation/normalization, honeypot + minimum
   fill-time checks, best-effort in-memory per-IP rate limiter.
-- New Server Action `app/actions/contact.ts`: validate → spam checks → rate limit → send with Resend.
+- New Server Action `app/actions/contact.ts`: validate → spam checks → rate limit → send via Resend REST API (`fetch`, no SDK dependency).
 - `components/game/sections/contact-form.tsx`: call the action, pending/error states, hidden honeypot
   field, render timestamp.
 
@@ -43,10 +43,10 @@ Strategy: ask-on-risk. Forecast: ~350 authored changed lines (lockfile excluded)
 Work-unit commits on the feature branch; push/PR are the user's decision.
 
 ## Tasks
-- [ ] T0 Provision Resend integration and pull env vars — route: inline (CLI state). Status: blocked on user browser setup step.
+- [ ] T0 User creates a Resend API key in the existing account, verifies `send.barrilito.dev`, and adds `RESEND_API_KEY` with `vercel env add` (user-only: secrets) — Status: pending user.
 - [x] T1 `lib/contact.ts` + `lib/contact.test.ts`: validation, honeypot, min fill time, rate limiter — route: delegated writer (2 non-trivial files).
-- [ ] T2 Server Action + form wiring with Resend — route: delegated writer (2+ non-trivial files). Depends on T0 env var names.
-- [ ] T3 Verify: tests, `tsc`, lint, build, browser submit (success, validation error, honeypot) — route: inline/per-action.
+- [x] T2 Server Action + form wiring with Resend — route: delegated writer (2+ non-trivial files). Env: `RESEND_API_KEY` (required), `CONTACT_FROM_EMAIL`, `CONTACT_TO_EMAIL` (optional).
+- [ ] T3 (partial) Verify: tests, `tsc`, lint, build, browser submit (success, validation error, honeypot) — route: inline/per-action.
 
 ## Acceptance criteria
 - Valid submission sends one email to the recipient with subject, name, email, message and `replyTo` = visitor.
@@ -61,5 +61,16 @@ Work-unit commits on the feature branch; push/PR are the user's decision.
 - T1 done: commit 42852c7 (35 tests RED→GREEN; pnpm test 143 pass; tsc clean; lint clean except 5 pre-existing warnings).
 - RDD: `.gitignore` change from `vercel link` (`.env*`) — consent declined for that candidate.
 
+- Marketplace install abandoned before provisioning (no resource created); switched to existing Resend account.
+
+- T2 done: commits 7eaa8bd (lib/contact-submission.ts, lib/resend.ts + tests) and 4df24c9 (app/actions/contact.ts, contact-form.tsx).
+  RED observed (missing modules) → GREEN; pnpm test 161 pass; tsc clean; lint only 5 pre-existing warnings; pnpm build ok.
+  `reply_to` confirmed against Resend REST docs (Context7). `useFormState` typed via `/// <reference types="react-dom/canary" />`.
+- T3 browser (lite mode, dev server): short message → field error + "Revisa los campos marcados." with input kept and aria-invalid;
+  valid message without RESEND_API_KEY → friendly error + server log "missing Resend configuration" (no secrets);
+  honeypot filled → fake success, no send; "Enviar otro" resets fields and startedAt; honeypot not visible.
+  PENDING: real delivery test once the user adds RESEND_API_KEY and verifies send.barrilito.dev.
+- RDD: range 42852c7..ff818dc declined by user.
+
 ## Next step
-User completes the Resend browser setup; meanwhile T1.
+User completes T0 (Resend domain + `vercel env add RESEND_API_KEY` + `vercel env pull`); then real send test (T3).
