@@ -10,6 +10,7 @@ import { HudStatus } from "./hud-status"
 import { SectionPanel } from "./section-panel"
 import { renderSection } from "./section-registry"
 import { useBoardScene } from "./use-board-scene"
+import { dispatchWheel, INITIAL_WHEEL_GATE } from "./wheel-gate"
 
 /** STOPS index matching `location.hash` at mount time, or 0 (the default stop) when absent/invalid. */
 function initialStopIndexFromHash(): number {
@@ -126,31 +127,29 @@ export function BoardGame({ onFallback }: BoardGameProps = {}) {
 
   // Wheel / keyboard / touch input, mirroring the design reference exactly.
   useEffect(() => {
-    let acc = 0
-    let lastWheel = 0
+    let gate = INITIAL_WHEEL_GATE
 
     const onWheel = (e: WheelEvent) => {
       const target = describeInputTarget(e.target)
       if (shouldIgnoreBoardInput({ targetTag: target.tag, targetIsContentEditable: target.isContentEditable, targetInDialog: target.inDialog, modalOpen: isModalOpen() })) {
         return
       }
-      if (panelCanScroll(panelRef.current, e.target, e.deltaY)) return
-      e.preventDefault()
       const now = performance.now()
-      if (api.isBusy() || now < api.getLockUntil()) {
-        acc = 0
-        return
-      }
-      if (now - lastWheel > 250) acc = 0
-      lastWheel = now
-      acc += e.deltaY
-      if (acc > 40) {
-        acc = 0
-        api.forward()
-      } else if (acc < -40) {
-        acc = 0
-        api.back()
-      }
+      // If this gesture scrolled the panel at any point, it stays "tainted" until a
+      // quiet pause: otherwise the same trackpad momentum that hit the panel's edge
+      // would fall straight through into rolling the die before the visitor finishes reading.
+      gate = dispatchWheel(
+        gate,
+        { now, deltaY: e.deltaY },
+        {
+          panelScrolls: panelCanScroll(panelRef.current, e.target, e.deltaY),
+          preventDefault: () => e.preventDefault(),
+          isBusy: api.isBusy,
+          lockUntil: api.getLockUntil,
+          forward: api.forward,
+          back: api.back,
+        },
+      )
     }
 
     const onKey = (e: KeyboardEvent) => {
