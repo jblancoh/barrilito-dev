@@ -79,5 +79,10 @@ Work-unit commits on the feature branch; push/PR are the user's decision.
 - CONTACT_TO_EMAIL set in Vercel (production, preview, development) to the owner's personal Gmail.
 - contactInfo phone/location updated to the real values (+52 993 360 0042, Villahermosa, Tabasco); verified in browser.
 
+- RDD: full branch 2c1e9ef..57bb15b reviewed (lens review-reliability) → approved, acknowledged, authority burned (lineage review-f9683a014b84ff1a).
+  Non-blocking follow-ups: WARNING resend fetch has no timeout (lib/resend.ts); WARNING startedAt empty before hydration → treated as spam,
+  message silently dropped (contact-form.tsx:156); SUGGESTIONS: misleading honeypot test name (contact.test.ts:157), prune test does not prove pruning
+  (contact.test.ts:224-233), rate limit consumed before config check (contact-submission.ts:80-90), "unknown" client key shares one bucket (actions/contact.ts:37).
+
 ## Next step
 User completes T0 (Resend domain + `vercel env add RESEND_API_KEY` + `vercel env pull`); then real send test (T3).
