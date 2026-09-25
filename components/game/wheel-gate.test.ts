@@ -31,19 +31,34 @@ describe("stepWheelGate", () => {
     }
   })
 
-  it("lets a fresh gesture advance after a quiet pause past 400ms", () => {
+  it("settles quickly enough that a deliberate follow-up scroll feels immediate", () => {
+    expect(PANEL_SETTLE_MS).toBe(200)
+  })
+
+  it("lets a fresh gesture advance after a quiet pause past PANEL_SETTLE_MS", () => {
     let state: WheelGateState = INITIAL_WHEEL_GATE
     ;({ state } = stepWheelGate(state, { now: 1000, deltaY: 60, panelConsumed: true, blocked: false }))
 
-    const result = stepWheelGate(state, { now: 1000 + 401, deltaY: 60, panelConsumed: false, blocked: false })
+    const result = stepWheelGate(state, { now: 1000 + PANEL_SETTLE_MS + 1, deltaY: 60, panelConsumed: false, blocked: false })
     expect(result.action).toBe("forward")
   })
 
-  it("keeps blocking a quiet gap between 250ms and 400ms", () => {
+  it("keeps blocking a quiet gap shorter than PANEL_SETTLE_MS", () => {
     let state: WheelGateState = INITIAL_WHEEL_GATE
     ;({ state } = stepWheelGate(state, { now: 1000, deltaY: 60, panelConsumed: true, blocked: false }))
 
-    const result = stepWheelGate(state, { now: 1000 + 300, deltaY: 60, panelConsumed: false, blocked: false })
+    const result = stepWheelGate(state, { now: 1000 + PANEL_SETTLE_MS - 50, deltaY: 60, panelConsumed: false, blocked: false })
+    expect(result.action).toBe("none")
+  })
+
+  it("drops board delta accumulated before the panel took over the gesture", () => {
+    // 30 of board delta, then the panel consumes the gesture: once the taint clears, that
+    // stale 30 must not combine with a small fresh delta to cross the threshold.
+    let state: WheelGateState = INITIAL_WHEEL_GATE
+    ;({ state } = stepWheelGate(state, { now: 1000, deltaY: 30, panelConsumed: false, blocked: false }))
+    ;({ state } = stepWheelGate(state, { now: 1016, deltaY: 60, panelConsumed: true, blocked: false }))
+
+    const result = stepWheelGate(state, { now: 1016 + PANEL_SETTLE_MS + 1, deltaY: 20, panelConsumed: false, blocked: false })
     expect(result.action).toBe("none")
   })
 

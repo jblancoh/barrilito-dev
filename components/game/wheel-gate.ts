@@ -15,7 +15,7 @@
 
 export const WHEEL_GESTURE_GAP_MS = 250
 export const WHEEL_THRESHOLD = 40
-export const PANEL_SETTLE_MS = 400
+export const PANEL_SETTLE_MS = 200
 
 export interface WheelGateState {
   /** Accumulated deltaY for the current gesture. */
@@ -53,7 +53,7 @@ export function stepWheelGate(state: WheelGateState, input: WheelGateInput): Whe
   const lastWheel = now
 
   if (panelConsumed) {
-    return { state: { acc, lastWheel, tainted: true }, action: "none" }
+    return { state: { acc: 0, lastWheel, tainted: true }, action: "none" }
   }
   if (blocked) {
     return { state: { acc: 0, lastWheel, tainted }, action: "none" }
