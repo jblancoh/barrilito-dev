@@ -10,6 +10,7 @@ import { HudStatus } from "./hud-status"
 import { SectionPanel } from "./section-panel"
 import { renderSection } from "./section-registry"
 import { useBoardScene } from "./use-board-scene"
+import { INITIAL_WHEEL_GATE, stepWheelGate } from "./wheel-gate"
 
 /** STOPS index matching `location.hash` at mount time, or 0 (the default stop) when absent/invalid. */
 function initialStopIndexFromHash(): number {
@@ -126,31 +127,27 @@ export function BoardGame({ onFallback }: BoardGameProps = {}) {
 
   // Wheel / keyboard / touch input, mirroring the design reference exactly.
   useEffect(() => {
-    let acc = 0
-    let lastWheel = 0
+    let gate = INITIAL_WHEEL_GATE
 
     const onWheel = (e: WheelEvent) => {
       const target = describeInputTarget(e.target)
       if (shouldIgnoreBoardInput({ targetTag: target.tag, targetIsContentEditable: target.isContentEditable, targetInDialog: target.inDialog, modalOpen: isModalOpen() })) {
         return
       }
-      if (panelCanScroll(panelRef.current, e.target, e.deltaY)) return
-      e.preventDefault()
       const now = performance.now()
-      if (api.isBusy() || now < api.getLockUntil()) {
-        acc = 0
+      // If this gesture scrolled the panel at any point, it stays "tainted" until a
+      // quiet pause: otherwise the same trackpad momentum that hit the panel's edge
+      // would fall straight through into rolling the die before the visitor finishes reading.
+      if (panelCanScroll(panelRef.current, e.target, e.deltaY)) {
+        gate = stepWheelGate(gate, { now, deltaY: e.deltaY, panelConsumed: true, blocked: false }).state
         return
       }
-      if (now - lastWheel > 250) acc = 0
-      lastWheel = now
-      acc += e.deltaY
-      if (acc > 40) {
-        acc = 0
-        api.forward()
-      } else if (acc < -40) {
-        acc = 0
-        api.back()
-      }
+      e.preventDefault()
+      const blocked = api.isBusy() || now < api.getLockUntil()
+      const result = stepWheelGate(gate, { now, deltaY: e.deltaY, panelConsumed: false, blocked })
+      gate = result.state
+      if (result.action === "forward") api.forward()
+      else if (result.action === "back") api.back()
     }
 
     const onKey = (e: KeyboardEvent) => {
