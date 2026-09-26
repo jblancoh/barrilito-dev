@@ -45,7 +45,7 @@ RDD: on (global). Review assessed per work-unit commit.
 ## Tasks
 - [x] T1 — Content model + helpers: restructure `lib/content.ts` per brief; WhatsApp URL helper; invariant tests. Route: delegated writer (writer trigger: 2+ non-trivial files).
 - [x] T2 — Sections: about (hero, bio, manifesto, nickname, community), skills→"Cómo trabajo" (pillars + tools strip), projects→"Casos", services→offer, contact-info (WhatsApp, community invite, no phone/schedule), remove "Descargar CV", shortcut copy. Route: delegated writer.
-- [ ] T3 — Chrome & metadata: navbar labels, `lib/site-metadata.ts`, OG/Twitter copy, footer cleanup (broken "Blog" link, newsletter, tagline). Route: delegated writer.
+- [x] T3 — Chrome & metadata: navbar labels, `lib/site-metadata.ts`, OG/Twitter copy, footer cleanup (broken "Blog" link, newsletter, tagline). Route: delegated writer.
 - [ ] T4 — Browser verification (3D + lite, light/dark, mobile) by the parent.
 
 ## Acceptance criteria
@@ -84,5 +84,20 @@ RDD: on (global). Review assessed per work-unit commit.
     `projects.tsx` for case images carries its own eslint-disable comment, consistent with the codebase's
     existing pattern for the same rule).
 
+- T3 done (commit pending — see below). `navbar.tsx` NAV_LINKS labels updated to match the new section
+  labels ("Cómo trabajo", "Casos", "Oferta"); brand text ("BarrilitoDev"/"barrilito.dev") left as the site's
+  own brand, not a person-name claim, so untouched in the navbar logo. `lib/site-metadata.ts` title/description
+  updated to the approved metadata. `app/opengraph-image.tsx` (and the twitter image, which re-exports it)
+  now render "Jonathan Blanco" + "AI Product Engineer & Tech Lead" + the approved description, keeping the
+  "Serpientes y escaleras" flavor line (now "Serpientes y escaleras · Barril"). `footer.tsx`: removed the
+  broken `/blog` link and the no-backend newsletter form, replaced the hardcoded "Servicios" list with
+  `offer.services` from `lib/content.ts` (plain text, not links — avoids reintroducing "#" hrefs), refreshed
+  the tagline to the brief's positioning line, and changed the copyright line to "Jonathan Blanco" (brand
+  "barrilito.dev" still shown in the logo lockup).
+  - `pnpm test`: 196/196 passed.
+  - `npx tsc --noEmit`: clean (0 errors).
+  - `pnpm lint`: passes (same pre-existing `no-img-element` warnings only).
+  - `pnpm build`: succeeds — `next build` compiles, type-checks, lints and prerenders all 7 static routes.
+
 ## Next step
-T3 — navbar labels, site metadata, OG/Twitter copy, footer cleanup.
+T4 (parent) — browser verification of the 3D board and lite/SEO fallback, light/dark, mobile width.

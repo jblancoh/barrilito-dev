@@ -16,7 +16,7 @@ const ACCENT = "#f7dd1d"
 const DARK_BACKGROUND = "#121212"
 const MUTED_TEXT = "#d4d4d8"
 
-export const alt = "BarrilitoDev — Desarrollo Web & React"
+export const alt = "Jonathan Blanco (Barril) — AI Product Engineer & Tech Lead"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 
@@ -90,10 +90,13 @@ export default function OpengraphImage() {
               <img src={logo} width={104} height={104} alt="" />
             </div>
           ) : null}
-          <div style={{ display: "flex", fontSize: 96, fontWeight: 700, color: "#ffffff" }}>BarrilitoDev</div>
+          <div style={{ display: "flex", fontSize: 96, fontWeight: 700, color: "#ffffff" }}>Jonathan Blanco</div>
+          <div style={{ display: "flex", fontSize: 40, marginTop: 12, color: SECONDARY }}>
+            AI Product Engineer & Tech Lead
+          </div>
           <div style={{ display: "flex", fontSize: 34, marginTop: 28, color: MUTED_TEXT }}>{SITE_DESCRIPTION}</div>
           <div style={{ display: "flex", fontSize: 24, marginTop: 36, color: PRIMARY }}>
-            Serpientes y escaleras · Portafolio
+            Serpientes y escaleras · Barril
           </div>
         </div>
       </div>
