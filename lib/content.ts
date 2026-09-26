@@ -191,6 +191,134 @@ export const offer: Offer = {
     "Trabajo con pocos proyectos a la vez para darles atención real. Modelos flexibles: por entregables, mensual o con participación si somos socios.",
 }
 
+export interface BriefOptions {
+  /** From `offer.services` titles, plus a trailing "Otro" catch-all. */
+  services: string[]
+}
+
+/** Options for the guided project brief wizard (see lib/project-brief.ts and components/game/sections/project-brief.tsx). */
+export const briefOptions: BriefOptions = {
+  services: [...offer.services.map((service) => service.title), "Otro"],
+}
+
+export interface BriefQuestion {
+  /** Full question shown as the step's fieldset legend in the wizard. */
+  heading: string
+  /** Short noun label used in the summary step and the formatted message/WhatsApp text (see lib/project-brief.ts's formatBriefMessage). */
+  messageLabel: string
+  options: string[]
+}
+
+/** Steps 2, 3 and 4 of the guided brief wizard, keyed positionally (not by domain, since a service like Charlas y talleres repurposes step 4 for something other than a budget). */
+export interface BriefQuestionSet {
+  step2: BriefQuestion
+  step3: BriefQuestion
+  step4: BriefQuestion
+  /** Copy for step 5's free-text field, also reused as its summary label. */
+  description: BriefDescriptionCopy
+}
+
+export interface BriefDescriptionCopy {
+  label: string
+  placeholder: string
+}
+
+/** Step 5 copy for every service except Charlas y talleres, which describes an event instead. */
+export const PROJECT_DESCRIPTION: BriefDescriptionCopy = {
+  label: "Tu proyecto",
+  placeholder: "¿Qué problema quieres resolver?",
+}
+
+/** Reused by every service whose step 3 is just "when do you need this" (everyone except Charlas y talleres, which asks for an event date instead). */
+const GENERIC_TIMING_QUESTION: BriefQuestion = {
+  heading: "¿Para cuándo?",
+  messageLabel: "Para cuándo",
+  options: ["Lo antes posible", "En 1 a 3 meses", "Sin prisa"],
+}
+
+/** Reused by every service that has a budget bracket (everyone except Charlas y talleres, which asks about honorarios instead — see owner decision below). */
+const GENERIC_BUDGET_QUESTION: BriefQuestion = {
+  heading: "Presupuesto aproximado (MXN)",
+  messageLabel: "Presupuesto aproximado",
+  options: ["Menos de $20k", "$20k–$60k", "$60k–$150k", "Más de $150k", "Aún no lo sé"],
+}
+
+/** Shared by "Socio técnico para startups" and the "Otro" catch-all (owner decision, see T5 in odd/tasks/project-brief.md). */
+const DEFAULT_QUESTION_SET: BriefQuestionSet = {
+  step2: {
+    heading: "¿En qué etapa estás?",
+    messageLabel: "Etapa",
+    options: ["Solo es una idea", "Tengo diseño o prototipo", "Ya tengo un producto en uso"],
+  },
+  step3: GENERIC_TIMING_QUESTION,
+  step4: GENERIC_BUDGET_QUESTION,
+  description: PROJECT_DESCRIPTION,
+}
+
+/**
+ * Per-service question sets for steps 2–4 of the guided brief wizard (owner
+ * approved, see T5 in odd/tasks/project-brief.md). Every entry in
+ * `offer.services`, plus "Otro", must have a set here — enforced by a
+ * completeness test in lib/project-brief.test.ts so a new service can't
+ * silently break the wizard. Charlas y talleres has no money brackets: its
+ * step 4 asks about honorarios instead of a budget.
+ */
+export const briefQuestionsByService: Record<string, BriefQuestionSet> = {
+  "Socio técnico para startups": DEFAULT_QUESTION_SET,
+  "IA en tu producto": {
+    step2: {
+      heading: "¿Dónde estás?",
+      messageLabel: "Situación actual",
+      options: ["Aún no tengo producto", "Tengo producto sin IA", "Ya uso IA y quiero mejorarla"],
+    },
+    step3: GENERIC_TIMING_QUESTION,
+    step4: GENERIC_BUDGET_QUESTION,
+    description: PROJECT_DESCRIPTION,
+  },
+  "Asesoría a equipos": {
+    step2: {
+      heading: "Tamaño del equipo",
+      messageLabel: "Tamaño del equipo",
+      options: ["1–5 personas", "6–20 personas", "Más de 20 personas"],
+    },
+    step3: GENERIC_TIMING_QUESTION,
+    step4: GENERIC_BUDGET_QUESTION,
+    description: PROJECT_DESCRIPTION,
+  },
+  "MVPs y landings rápidas": {
+    step2: {
+      heading: "Punto de partida",
+      messageLabel: "Punto de partida",
+      options: ["Solo es una idea", "Tengo diseño", "Quiero rehacer algo que ya existe"],
+    },
+    step3: GENERIC_TIMING_QUESTION,
+    step4: GENERIC_BUDGET_QUESTION,
+    description: PROJECT_DESCRIPTION,
+  },
+  "Charlas y talleres": {
+    step2: {
+      heading: "Formato",
+      messageLabel: "Formato",
+      options: ["Charla", "Taller práctico", "Ambos"],
+    },
+    step3: {
+      heading: "Fecha del evento",
+      messageLabel: "Fecha del evento",
+      options: ["En menos de 1 mes", "En 1 a 3 meses", "Aún sin fecha"],
+    },
+    step4: {
+      heading: "Honorarios",
+      messageLabel: "Honorarios",
+      options: ["Evento pagado", "Solo viáticos", "Evento comunitario sin pago"],
+    },
+    description: {
+      label: "Tu evento",
+      placeholder: "¿De qué trata el evento y quién asistirá?",
+    },
+  },
+  Otro: DEFAULT_QUESTION_SET,
+}
+
 export interface Community {
   items: string[]
   invite: string

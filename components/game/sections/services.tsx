@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { offer } from "@/lib/content"
+import { setContactMode } from "../contact-mode-store"
 import type { BoardNav } from "../board-nav"
 import { STOP_BORDER_T_CLASS } from "../stop-colors"
 import type { StopColor } from "../board-config"
@@ -9,6 +10,16 @@ import type { StopColor } from "../board-config"
 const SERVICE_COLORS: StopColor[] = ["primary", "secondary", "accent", "chart5", "destructive"]
 
 export function ServicesSection({ nav }: { nav: BoardNav }) {
+  // Opens the contact section already in "Pedir cotización" mode (the
+  // store's own default, see contact-mode-store.ts — this only matters when
+  // the visitor had switched to "Mensaje libre" earlier): flips the shared
+  // contact-mode store, read by every mounted ContactFormSection (board and
+  // the always-mounted lite/SEO copy alike), before navigating there.
+  const handleQuoteClick = () => {
+    setContactMode("brief")
+    nav.goTo("contact")
+  }
+
   return (
     <section className="flex flex-col gap-6">
       <div>
@@ -35,9 +46,9 @@ export function ServicesSection({ nav }: { nav: BoardNav }) {
       <Button
         size="lg"
         className="self-start bg-gradient-to-r from-primary to-secondary text-primary-foreground hover:from-primary/90 hover:to-secondary/90"
-        onClick={() => nav.goTo("contact")}
+        onClick={handleQuoteClick}
       >
-        Hablemos
+        Cotiza tu proyecto
       </Button>
     </section>
   )

@@ -6,7 +6,7 @@
 // types today, not its default ones) — it is compiled away and never
 // becomes a runtime import. Next.js aliases the "react-dom" import below to
 // a build that includes these hooks at runtime.
-import { useEffect, useState, type ChangeEvent } from "react"
+import { useEffect, useState, useSyncExternalStore, type ChangeEvent } from "react"
 import { useFormState, useFormStatus } from "react-dom"
 import { Github, Linkedin, MapPin, MessageCircle, Twitter } from "lucide-react"
 import { sendContactMessage } from "@/app/actions/contact"
@@ -16,9 +16,12 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { initialContactFormState, type ContactFormState } from "@/lib/contact-submission"
 import { contactInfo, socialLinks } from "@/lib/content"
+import { hasBriefIntent, withoutBriefIntent } from "@/lib/project-brief"
 import { buildWhatsAppUrl } from "@/lib/whatsapp"
+import { getContactMode, setContactMode, subscribeContactMode } from "../contact-mode-store"
 import type { BoardNav } from "../board-nav"
 import { ShortcutCard } from "../shortcut-card"
+import { ProjectBriefWizard } from "./project-brief"
 
 interface FormFields {
   name: string
@@ -171,7 +174,28 @@ function ContactFormFields({ onSendAnother }: { onSendAnother: () => void }) {
 
 export function ContactFormSection({ nav }: { nav: BoardNav }) {
   const [formInstanceKey, setFormInstanceKey] = useState(0)
+  // Shared across every mounted instance of this section (board and the
+  // always-mounted lite/SEO copy alike) via a module-level store, not local
+  // state — see components/game/contact-mode-store.ts for why: the Services
+  // section's "Cotiza tu proyecto" CTA needs to flip whichever instance the
+  // visitor ends up looking at, without racing against which one mounts or
+  // reacts first.
+  // The server snapshot must match the store's true default ("brief", see
+  // contact-mode-store.ts) or the server-rendered HTML and the first client
+  // render would disagree and React would report a hydration mismatch.
+  const mode = useSyncExternalStore(subscribeContactMode, getContactMode, () => "brief")
   const whatsappUrl = buildWhatsAppUrl(contactInfo.phone, contactInfo.whatsappMessage)
+
+  // Supports a direct/shared `?brief=1#contact` link: whichever
+  // ContactFormSection instance mounts first consumes (strips) the flag and
+  // sets the shared mode — idempotent, since every other instance just reads
+  // the same store afterwards regardless of mount order.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (!hasBriefIntent(window.location.search)) return
+    setContactMode("brief")
+    window.history.replaceState(window.history.state, "", withoutBriefIntent(window.location.href))
+  }, [])
 
   return (
     <section className="flex flex-col gap-6">
@@ -196,12 +220,42 @@ export function ContactFormSection({ nav }: { nav: BoardNav }) {
         <CardHeader>
           <CardTitle>Cuéntame de tu proyecto</CardTitle>
           <CardDescription>Completa el formulario y te respondo lo antes posible.</CardDescription>
+          <div role="group" aria-label="Forma de contacto" className="mt-2 inline-flex w-fit gap-1 rounded-lg border p-1">
+            <button
+              type="button"
+              aria-pressed={mode === "brief"}
+              onClick={() => setContactMode("brief")}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                mode === "brief"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Pedir cotización
+            </button>
+            <button
+              type="button"
+              aria-pressed={mode === "message"}
+              onClick={() => setContactMode("message")}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                mode === "message"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Mensaje libre
+            </button>
+          </div>
         </CardHeader>
         <CardContent>
-          <ContactFormFields
-            key={formInstanceKey}
-            onSendAnother={() => setFormInstanceKey((key) => key + 1)}
-          />
+          {mode === "message" ? (
+            <ContactFormFields
+              key={formInstanceKey}
+              onSendAnother={() => setFormInstanceKey((key) => key + 1)}
+            />
+          ) : (
+            <ProjectBriefWizard />
+          )}
         </CardContent>
       </Card>
 
