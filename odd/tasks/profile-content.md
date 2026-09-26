@@ -118,6 +118,11 @@ RDD: on (global). Review assessed per work-unit commit.
   repeated in public copy; WhatsApp CTA uses `Button asChild` (no nested interactive elements).
   `pnpm test` 198/198, `npx tsc --noEmit` clean, `pnpm lint` 0 errors, `pnpm build` OK.
 
+- Second full-branch review (938661b) approved + acknowledged (lineage review-4bbc1c2637667e27); its advisory
+  (social icon links nesting Button in <a> in contact-info.tsx and pre-existing about.tsx) fixed with
+  `Button asChild` at user request. Built HTML: 0 `<a><button>` nestings. `pnpm test` 198/198, tsc clean,
+  lint 0 errors, build OK.
+
 ## Follow-ups (not in this feature)
 - Delete dead legacy components (`hero-section.tsx`, `projects-section.tsx`, `skills-section.tsx`) and the deprecated exports.
 - Clainor public URL/metrics, Directorio Solidario screenshots, updated CV + "Descargar CV", Cal.com booking.

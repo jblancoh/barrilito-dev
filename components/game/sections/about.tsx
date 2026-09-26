@@ -34,21 +34,21 @@ export function AboutSection({ nav }: { nav: BoardNav }) {
       </div>
 
       <div className="flex gap-4">
-        <a href={socialLinks.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub">
-          <Button variant="ghost" size="icon" className="hover:bg-accent/20 hover:text-accent">
+        <Button variant="ghost" size="icon" className="hover:bg-accent/20 hover:text-accent" asChild>
+          <a href={socialLinks.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub">
             <Github className="h-5 w-5" />
-          </Button>
-        </a>
-        <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
-          <Button variant="ghost" size="icon" className="hover:bg-primary/20 hover:text-primary">
+          </a>
+        </Button>
+        <Button variant="ghost" size="icon" className="hover:bg-primary/20 hover:text-primary" asChild>
+          <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
             <Linkedin className="h-5 w-5" />
-          </Button>
-        </a>
-        <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" aria-label="Twitter">
-          <Button variant="ghost" size="icon" className="hover:bg-secondary/20 hover:text-secondary">
+          </a>
+        </Button>
+        <Button variant="ghost" size="icon" className="hover:bg-secondary/20 hover:text-secondary" asChild>
+          <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" aria-label="Twitter">
             <Twitter className="h-5 w-5" />
-          </Button>
-        </a>
+          </a>
+        </Button>
       </div>
 
       <div className="flex flex-col gap-4 border-t pt-6">
