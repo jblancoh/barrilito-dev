@@ -152,27 +152,22 @@ export function formatBriefMessage(brief: ProjectBrief): string {
 }
 
 // ---------------------------------------------------------------------------
-// Brief-mode deep-link helpers (T3): let the Services section's "Cotiza tu
-// proyecto" CTA ask the contact section to open in brief mode instead of
-// plain mensaje libre, the same way `?mode=` already overrides the render
-// mode (see components/game/render-mode.ts) — a URL flag survives both the
-// board's async walk-to-stop animation and lite mode's already-mounted
-// section, unlike component state. Kept pure/URL-based so it stays
-// unit-testable without a DOM (see lib/share.ts for the equivalent pattern
-// with stop hashes).
+// Brief-mode deep-link helper: lets a direct `?brief=1#contact` link (or a
+// stale one left in the address bar) open the contact section straight into
+// brief mode, the same way `?mode=` already overrides the render mode (see
+// components/game/render-mode.ts). The Services section's "Cotiza tu
+// proyecto" CTA itself no longer needs this — it flips the shared
+// contact-mode store directly (see components/game/contact-mode-store.ts)
+// — but a mounting ContactFormSection still checks the URL for a
+// bookmarked/shared link. Kept pure/URL-based so it stays unit-testable
+// without a DOM (see lib/share.ts for the equivalent pattern with stop
+// hashes).
 
 const BRIEF_INTENT_PARAM = "brief"
 
 /** Whether `search` (e.g. `location.search`, with or without the leading "?") carries the brief-mode flag. */
 export function hasBriefIntent(search: string): boolean {
   return new URLSearchParams(search).get(BRIEF_INTENT_PARAM) === "1"
-}
-
-/** Adds the brief-mode flag to `href`, keeping its path, other query params and hash as-is. */
-export function withBriefIntent(href: string): string {
-  const url = new URL(href)
-  url.searchParams.set(BRIEF_INTENT_PARAM, "1")
-  return url.toString()
 }
 
 /** Removes the brief-mode flag from `href`, e.g. once the contact section has consumed it. */

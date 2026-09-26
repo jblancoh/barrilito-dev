@@ -2,8 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { offer } from "@/lib/content"
-import { withBriefIntent } from "@/lib/project-brief"
-import { dispatchOpenBrief } from "../brief-intent-events"
+import { setContactMode } from "../contact-mode-store"
 import type { BoardNav } from "../board-nav"
 import { STOP_BORDER_T_CLASS } from "../stop-colors"
 import type { StopColor } from "../board-config"
@@ -11,15 +10,12 @@ import type { StopColor } from "../board-config"
 const SERVICE_COLORS: StopColor[] = ["primary", "secondary", "accent", "chart5", "destructive"]
 
 export function ServicesSection({ nav }: { nav: BoardNav }) {
-  // Opens the contact section already in "Armar brief" mode: dispatchOpenBrief
-  // reaches an already-mounted instance (lite mode); the `?brief=1` flag
-  // reaches a freshly-mounted one (the board, once it arrives at "contact") —
-  // see components/game/brief-intent-events.ts and lib/project-brief.ts.
+  // Opens the contact section already in "Armar brief" mode: flips the
+  // shared contact-mode store (read by every mounted ContactFormSection —
+  // board and the always-mounted lite/SEO copy alike, see
+  // components/game/contact-mode-store.ts) before navigating there.
   const handleQuoteClick = () => {
-    dispatchOpenBrief()
-    if (typeof window !== "undefined") {
-      window.history.replaceState(window.history.state, "", withBriefIntent(window.location.href))
-    }
+    setContactMode("brief")
     nav.goTo("contact")
   }
 

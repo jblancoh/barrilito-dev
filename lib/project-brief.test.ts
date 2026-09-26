@@ -7,7 +7,6 @@ import {
   formatBriefSubject,
   hasBriefIntent,
   validateBrief,
-  withBriefIntent,
   withoutBriefIntent,
   type ProjectBrief,
 } from "./project-brief"
@@ -205,14 +204,6 @@ describe("brief-intent deep-link helpers", () => {
     expect(hasBriefIntent("")).toBe(false)
     expect(hasBriefIntent("?mode=lite")).toBe(false)
     expect(hasBriefIntent("?brief=0")).toBe(false)
-  })
-
-  it("adds the flag while keeping the rest of the URL untouched", () => {
-    expect(withBriefIntent("https://example.com/#contact")).toBe("https://example.com/?brief=1#contact")
-  })
-
-  it("keeps other query params when adding the flag", () => {
-    expect(withBriefIntent("https://example.com/?a=1#contact")).toBe("https://example.com/?a=1&brief=1#contact")
   })
 
   it("removes the flag once consumed, keeping path, other params and hash", () => {
