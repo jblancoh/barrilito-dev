@@ -31,7 +31,6 @@ export function ServicesSection({ nav }: { nav: BoardNav }) {
       </div>
       <div className="flex flex-col gap-2 border-t pt-6 text-sm text-muted-foreground">
         <p>{offer.terms}</p>
-        <p>{offer.noHago}</p>
       </div>
       <Button
         size="lg"

@@ -8,12 +8,15 @@
 // a build that includes these hooks at runtime.
 import { useEffect, useState, type ChangeEvent } from "react"
 import { useFormState, useFormStatus } from "react-dom"
+import { Github, Linkedin, MapPin, MessageCircle, Twitter } from "lucide-react"
 import { sendContactMessage } from "@/app/actions/contact"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { initialContactFormState, type ContactFormState } from "@/lib/contact-submission"
+import { contactInfo, socialLinks } from "@/lib/content"
+import { buildWhatsAppUrl } from "@/lib/whatsapp"
 import type { BoardNav } from "../board-nav"
 import { ShortcutCard } from "../shortcut-card"
 
@@ -168,6 +171,7 @@ function ContactFormFields({ onSendAnother }: { onSendAnother: () => void }) {
 
 export function ContactFormSection({ nav }: { nav: BoardNav }) {
   const [formInstanceKey, setFormInstanceKey] = useState(0)
+  const whatsappUrl = buildWhatsAppUrl(contactInfo.phone, contactInfo.whatsappMessage)
 
   return (
     <section className="flex flex-col gap-6">
@@ -175,6 +179,17 @@ export function ContactFormSection({ nav }: { nav: BoardNav }) {
         <h2 className="text-4xl font-bold leading-[1.1] tracking-tight">Contacto</h2>
         <p className="mt-3 text-xl text-muted-foreground">¿Tienes un proyecto en mente? ¡Hablemos!</p>
       </div>
+
+      <Button
+        size="lg"
+        asChild
+        className="w-full gap-2 bg-gradient-to-r from-primary to-secondary text-primary-foreground hover:from-primary/90 hover:to-secondary/90"
+      >
+        <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+          <MessageCircle className="h-5 w-5" />
+          Escríbeme por WhatsApp
+        </a>
+      </Button>
 
       <Card className="overflow-hidden border-primary/20">
         <div className="h-2 bg-gradient-to-r from-primary via-secondary to-accent" />
@@ -189,6 +204,34 @@ export function ContactFormSection({ nav }: { nav: BoardNav }) {
           />
         </CardContent>
       </Card>
+
+      <div className="flex items-start gap-4">
+        <div className="rounded-full bg-accent/10 p-3">
+          <MapPin className="h-6 w-6 text-accent" />
+        </div>
+        <div>
+          <h3 className="font-medium">Ubicación</h3>
+          <p className="text-muted-foreground">{contactInfo.location}</p>
+        </div>
+      </div>
+
+      <div className="flex gap-4">
+        <Button variant="ghost" size="icon" className="hover:bg-accent/20 hover:text-accent" asChild>
+          <a href={socialLinks.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+            <Github className="h-5 w-5" />
+          </a>
+        </Button>
+        <Button variant="ghost" size="icon" className="hover:bg-primary/20 hover:text-primary" asChild>
+          <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+            <Linkedin className="h-5 w-5" />
+          </a>
+        </Button>
+        <Button variant="ghost" size="icon" className="hover:bg-secondary/20 hover:text-secondary" asChild>
+          <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+            <Twitter className="h-5 w-5" />
+          </a>
+        </Button>
+      </div>
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3">
         <ShortcutCard
