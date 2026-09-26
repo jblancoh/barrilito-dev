@@ -58,7 +58,7 @@ Work-unit commits on the feature branch; push/PR are the user's decision.
 
 ## Acceptance criteria
 - Wizard keeps answers when going back/forward; one question per step; keyboard accessible.
-- Email path produces subject `Brief: <service>` and a readable multi-line message; anti-spam unchanged.
+- Email path produces subject `Cotización: <service>` and a readable multi-line message; anti-spam unchanged.
 - WhatsApp link contains the encoded brief text.
 - `pnpm test`, `pnpm lint`, `pnpm build` pass; checked in browser at desktop and mobile width.
 
@@ -211,3 +211,5 @@ noun) reads well enough in the sent email, or should be renamed.
 - Browser (lite + board): all 6 services show the owner-approved step 2–4 questions; "Pedir cotización" first and default in both instances; switching service clears answers (0 checked, Next disabled); Charlas summary/WhatsApp/subject use per-service labels; no console/hydration errors. `pnpm test` 241/241.
 - Review: owner granted; reliability approved and acknowledged (lineage review-49eb894bd065c250, authority burned). Non-blocking advisories (follow-ups): R3-non-array-answers-masked (WARNING, lib/project-brief.test.ts:62), R3-service-switch-reset-untested (WARNING, project-brief.tsx:256-258), R3-default-mode-toggle-order-untested (SUGGESTION, contact-form.tsx:186).
 - Copy follow-ups spotted: step-5 placeholder "¿Qué problema quieres resolver?" and summary label "Tu proyecto" don't fit Charlas; email subject still "Brief: …".
+- T6 review: owner granted; reliability approved and acknowledged (lineage review-cf3f9d785141f605). Advisories: R3-stale-acceptance-subject (fixed in this doc), R3-ui-copy-unasserted (SUGGESTION, project-brief.tsx:93 — follow-up).
+- Delivered as PR https://github.com/jblancoh/barrilito-dev/pull/20.
