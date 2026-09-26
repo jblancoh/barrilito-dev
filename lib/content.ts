@@ -136,14 +136,14 @@ export const featuredCases: Case[] = [
 export const secondaryCases: Case[] = [
   {
     title: "Simulador de Bolsa de Valores",
-    description: "Construido solo, de punta a punta, con React Native y Lambdas.",
-    tags: ["React Native", "AWS Lambda", "Solo"],
+    description: "Construido solo, de punta a punta, con React Native, Next.js y Lambdas.",
+    tags: ["React Native", "Next.js", "AWS Lambda"],
   },
   {
     title: "Graviti",
     role: "Tech lead",
     description: "Plataforma de créditos donde lideré el equipo técnico y subimos +3% la conversión.",
-    tags: ["Fintech", "Tech lead"],
+    tags: ["Fintech", "Tech lead", "React", "Firebase", "Microservicios"],
   },
   {
     title: "barrilito.dev",
@@ -161,8 +161,6 @@ export interface Offer {
   services: Service[]
   /** Working-model line shown under the services grid. */
   terms: string
-  /** What's explicitly out of scope. */
-  noHago: string
 }
 
 /** "Oferta" — the replacement for the old generic services list. */
@@ -191,7 +189,6 @@ export const offer: Offer = {
   ],
   terms:
     "Trabajo con pocos proyectos a la vez para darles atención real. Modelos flexibles: por entregables, mensual o con participación si somos socios.",
-  noHago: "No hago: WordPress, mantenimiento de sistemas legacy ni proyectos sin presupuesto.",
 }
 
 export interface Community {
@@ -202,6 +199,7 @@ export interface Community {
 export const community: Community = {
   items: [
     "Co-líder del AWS User Group Villahermosa",
+    "Co-líder de Dev Night Talks",
     "Host de Hacktoberfest (2.º año)",
     "Mentorías y talleres",
   ],

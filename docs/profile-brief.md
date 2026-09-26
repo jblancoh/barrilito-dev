@@ -49,7 +49,7 @@ Sin botón "Descargar CV" hasta que el CV esté actualizado.
 - **Directorio Solidario:** tras el incendio de la Feria Tabasco, lo levanté en menos de 2 horas. En 24 horas había 43 comercios verificados, más aliados como Flick con comandas gratis. (Ya no está en línea.)
 - **TheKickoff:** gestor de torneos deportivos que va hacia red social y mapa de torneos en México. Demo: https://demo.thekickoff.lat/ (en construcción).
 
-**Secundarios:** simulador de Bolsa de Valores (solo, de punta a punta con React Native y Lambdas) · plataforma de créditos Graviti (tech lead, +3 % de conversión) · barrilito.dev.
+**Secundarios:** simulador de Bolsa de Valores (solo, de punta a punta con React Native, Next.js y Lambdas) · plataforma de créditos Graviti (tech lead, +3 % de conversión; React, Firebase, microservicios) · barrilito.dev.
 
 ## 8. Oferta (reemplaza "Servicios")
 1. **Socio técnico para startups:** definimos el producto juntos y lo construyo y despliego.
@@ -60,10 +60,8 @@ Sin botón "Descargar CV" hasta que el CV esté actualizado.
 
 > Trabajo con pocos proyectos a la vez para darles atención real. Modelos flexibles: por entregables, mensual o con participación si somos socios.
 
-**No hago:** WordPress, mantenimiento de sistemas legacy ni proyectos sin presupuesto.
-
 ## 9. Comunidad
-Co-líder del **AWS User Group Villahermosa** · host de **Hacktoberfest** (2.º año) · mentorías y talleres.
+Co-líder del **AWS User Group Villahermosa** · co-líder de **Dev Night Talks** · host de **Hacktoberfest** (2.º año) · mentorías y talleres.
 > ¿Organizas un meetup o evento? Hablemos.
 
 ## 10. Contacto
