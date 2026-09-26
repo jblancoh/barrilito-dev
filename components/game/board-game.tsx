@@ -233,6 +233,7 @@ export function BoardGame({ onFallback }: BoardGameProps = {}) {
         canForward={Boolean(nextStop)}
         canBack={state.stop > 0}
         showRail={layout.rail}
+        compact={layout.narrow}
         currentStopIndex={state.stop}
         onForward={api.forward}
         onBack={api.back}

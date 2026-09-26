@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { classifySwipe } from "./touch-gesture"
+import { classifySwipe, inputHint } from "./touch-gesture"
 
 const swipe = (startX: number, startY: number, endX: number, endY: number) =>
   classifySwipe({ startX, startY, endX, endY, viewportWidth: 390 })
@@ -29,5 +29,15 @@ describe("classifySwipe", () => {
   it("ignores swipes that start at a side edge (system back gesture)", () => {
     expect(swipe(10, 400, 150, 400)).toBeNull()
     expect(swipe(380, 400, 240, 400)).toBeNull()
+  })
+})
+
+describe("inputHint", () => {
+  it("explains wheel controls for fine pointers", () => {
+    expect(inputHint(false)).toBe("Scroll ↓ tira · Scroll ↑ regresa")
+  })
+
+  it("explains swipe controls for touch screens", () => {
+    expect(inputHint(true)).toBe("Desliza ← tira · → regresa")
   })
 })

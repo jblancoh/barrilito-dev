@@ -27,3 +27,8 @@ export function classifySwipe({ startX, startY, endX, endY, viewportWidth }: Swi
   if (Math.abs(dx) < SWIPE_DOMINANCE * Math.abs(dy)) return null
   return dx < 0 ? "forward" : "back"
 }
+
+/** Control hint for the HUD: touch screens swipe, everything else scrolls. */
+export function inputHint(coarsePointer: boolean): string {
+  return coarsePointer ? "Desliza ← tira · → regresa" : "Scroll ↓ tira · Scroll ↑ regresa"
+}
