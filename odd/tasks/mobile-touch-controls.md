@@ -44,5 +44,13 @@ Touch navigation uses a horizontal swipe (left = roll, right = back); vertical g
 - Desktop: original card and scroll hint unchanged.
 - Branch total vs base: 214 insertions, 45 deletions (includes this doc); single PR.
 
+## Review
+- Native review lineage `review-b4dc5a1cc0f97715` (medium, lens reliability) on affcee4..adae9a1: approved and acknowledged.
+- Advisory follow-ups (non-blocking, not applied):
+  - WARNING: horizontal swipes starting inside the panel now move the board; no panel content scrolls horizontally today (grep: no overflow-x/pre/table/carousel), so latent only.
+  - SUGGESTION: ignore multi-touch gestures (pinch) or match Touch.identifier.
+  - SUGGESTION: guard `matchMedia` / fall back to `addListener` for older Safari.
+  - SUGGESTION: boundary tests at exactly 60px, 1.5x ratio, 24px edge.
+
 ## Next step
 Push and open the PR when the user decides.
