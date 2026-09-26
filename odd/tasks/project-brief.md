@@ -45,6 +45,15 @@ Work-unit commits on the feature branch; push/PR are the user's decision.
 - [x] T4 Fix board-mode brief intent race (shared contact-mode store). Route: delegated writer
   (3 non-trivial files: new store module + test, contact-form.tsx, services.tsx).
 
+## T5 (owner request 2026-09-26)
+- [x] T5 Per-service brief questions + rename to "Pedir cotización" (default mode, placed first/left; "Mensaje libre" second). Route: delegated writer (lib/project-brief.ts, lib/content.ts, tests, project-brief.tsx, contact-form.tsx, services.tsx → 2+ non-trivial files).
+  Owner-approved question sets (steps 2/3/4; always 6 steps):
+  - Socio técnico / Otro: Etapa (Solo es una idea · Tengo diseño o prototipo · Ya tengo un producto en uso) / ¿Para cuándo? / Presupuesto brackets.
+  - IA en tu producto: ¿Dónde estás? (Aún no tengo producto · Tengo producto sin IA · Ya uso IA y quiero mejorarla) / ¿Para cuándo? / Presupuesto.
+  - Asesoría a equipos: Tamaño del equipo (1–5 · 6–20 · Más de 20 personas) / ¿Para cuándo? / Presupuesto.
+  - MVPs y landings rápidas: Punto de partida (Solo es una idea · Tengo diseño · Quiero rehacer algo que ya existe) / ¿Para cuándo? / Presupuesto.
+  - Charlas y talleres: Formato (Charla · Taller práctico · Ambos) / Fecha del evento (En menos de 1 mes · En 1 a 3 meses · Aún sin fecha) / Honorarios (Evento pagado · Solo viáticos · Evento comunitario sin pago) — no money brackets.
+
 ## Acceptance criteria
 - Wizard keeps answers when going back/forward; one question per step; keyboard accessible.
 - Email path produces subject `Brief: <service>` and a readable multi-line message; anti-spam unchanged.
@@ -143,5 +152,55 @@ deep link (desktop + mobile width); push/PR remain the user's decision.
 - Review: assess (base 0841ecf, committed-only) → medium, review_due slice_budget_reached (1044 lines); consent relayed to owner.
 - Review outcome: owner granted; reliability lens approved, acknowledged (lineage review-c0d5e7ee4a8f7380, authority burned). Non-blocking advisories (follow-ups, not applied): R3-deeplink-effect-untested (WARNING, contact-form.tsx:189-194), R3-tautological-shared-store-test (WARNING, contact-mode-store.test.ts:53-60), R3-mode-toggle-discards-input (SUGGESTION, contact-form.tsx:248-255), R3-raw-fields-submitted (SUGGESTION, project-brief.tsx:195-198).
 
+- T5 done (commit pending SHA below). STRICT TDD: RED observed —
+  `pnpm test -- project-brief` failed with `TypeError: getBriefQuestionSet is not a function`
+  (right reason: the new function didn't exist yet, called at test-module load time to build the
+  shared `valid` fixture). GREEN: 241/241 passed after implementing the new data/logic shape.
+  Also ran the store's default-change RED/GREEN separately: `pnpm test -- contact-mode-store`
+  failed on "defaults to 'brief' mode..." (`expected 'message' to be 'brief'`, right reason — the
+  literal was still "message") → GREEN (241/241) after flipping the initial `mode` value.
+
+  **Data shape chosen**: `lib/content.ts` gained `BriefQuestion` (`heading`, `messageLabel`,
+  `options`), `BriefQuestionSet` (`step2`/`step3`/`step4`, named positionally rather than by
+  domain since Charlas y talleres repurposes step 4 for "Honorarios" instead of a budget), and
+  `briefQuestionsByService: Record<string, BriefQuestionSet>` (one entry per `offer.services`
+  title plus "Otro"; "Socio técnico para startups" and "Otro" share one `DEFAULT_QUESTION_SET`
+  object; `GENERIC_TIMING_QUESTION`/`GENERIC_BUDGET_QUESTION` are reused by every service except
+  Charlas y talleres). `ProjectBrief` (lib/project-brief.ts) changed from separate
+  `stage`/`timeline`/`budget` fields to `answers: [string, string, string]` (positional: step 2,
+  3, 4's answers) — the chosen "keep it simple" option from your two suggested shapes, since a
+  named-field shape (e.g. `stage`) would be misleading once a service repurposes that slot for
+  something unrelated (team size, event date, honorarios). `BriefErrors.answers` mirrors that as
+  `[string?, string?, string?]` so per-step validation errors stay addressable. New
+  `getBriefQuestionSet(service)` (lib/project-brief.ts) wraps the content.ts map and is the single
+  place `validateBrief`, `canAdvanceFromStep`, `formatBriefMessage` and the wizard component
+  resolve a service's questions from. `formatBriefMessage` now emits `${step.messageLabel}:
+  ${answer}` per line (e.g. "Formato: Taller práctico", "Honorarios: Solo viáticos" for Charlas y
+  talleres), and the summary step's `<dt>`s use the same `messageLabel`s.
+  Guard test added: `getBriefQuestionSet` completeness — loops `briefOptions.services` and asserts
+  every one resolves to a defined question set (lib/project-brief.test.ts).
+
+  **Default/label rename**: `components/game/contact-mode-store.ts`'s module-level `mode` now
+  starts `"brief"` (was `"message"`); `contact-form.tsx`'s `useSyncExternalStore` server-snapshot
+  callback changed from `() => "message"` to `() => "brief"` to match (avoids a hydration
+  mismatch, per your note). Toggle buttons swapped order — "Pedir cotización" now first/left,
+  "Mensaje libre" second — and every user-facing "Armar brief"/"Arma tu brief" string and mentioning
+  comment renamed to "Pedir cotización" (including the success-state button, "Armar otro brief" →
+  "Pedir otra cotización", for copy consistency). `?brief=1` deep-link handling
+  (`hasBriefIntent`/`withoutBriefIntent`) and the Services CTA's `setContactMode("brief")` were
+  left in place unchanged — both are harmless no-ops on the new default, and still matter when a
+  visitor had switched to "Mensaje libre" first.
+
+  Changing service now clears `answers` back to `["","",""]` (`handleServiceChange` in
+  `project-brief.tsx`) so a stale answer from a previous service's question set can never reach
+  `validateBrief` as if it belonged to the newly-selected service.
+
+  `pnpm exec tsc --noEmit`: clean. `pnpm lint`: only the same 5 pre-existing `<img>` warnings in
+  unrelated files. `pnpm test`: 241/241 passed. `pnpm build`: succeeded (dev server was stopped,
+  ran without conflict).
+
 ## Next step
-Owner decides push/PR. Optional follow-ups: the advisories above; WhatsApp brief greeting with client name.
+Owner decides push/PR. Optional follow-ups: the T4 advisories above; WhatsApp brief greeting with
+client name; consider whether "IA en tu producto"'s step-2 messageLabel ("Situación actual",
+chosen since the owner-approved heading "¿Dónde estás?" doesn't translate cleanly into a report
+noun) reads well enough in the sent email, or should be renamed.

@@ -10,10 +10,11 @@ import type { StopColor } from "../board-config"
 const SERVICE_COLORS: StopColor[] = ["primary", "secondary", "accent", "chart5", "destructive"]
 
 export function ServicesSection({ nav }: { nav: BoardNav }) {
-  // Opens the contact section already in "Armar brief" mode: flips the
-  // shared contact-mode store (read by every mounted ContactFormSection —
-  // board and the always-mounted lite/SEO copy alike, see
-  // components/game/contact-mode-store.ts) before navigating there.
+  // Opens the contact section already in "Pedir cotización" mode (the
+  // store's own default, see contact-mode-store.ts — this only matters when
+  // the visitor had switched to "Mensaje libre" earlier): flips the shared
+  // contact-mode store, read by every mounted ContactFormSection (board and
+  // the always-mounted lite/SEO copy alike), before navigating there.
   const handleQuoteClick = () => {
     setContactMode("brief")
     nav.goTo("contact")

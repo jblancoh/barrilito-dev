@@ -1,35 +1,53 @@
 /**
- * Pure model for the guided project brief ("Arma tu brief"): the answer
+ * Pure model for the guided project brief ("Pedir cotización"): the answer
  * shape, validation, formatting, and the wizard's step-advance rule, plus
- * the deep-link helpers the "Cotiza tu proyecto" CTA uses (see
- * components/game/sections/services.tsx). The brief is serialized into the
- * existing contact pipeline's `subject`/`message` fields — lib/contact.ts,
- * lib/contact-submission.ts and app/actions/contact.ts stay unchanged. No
- * React/DOM dependency here on purpose, so this module stays unit-testable
- * in isolation (see project-brief.test.ts); the wizard UI lives in
- * components/game/sections/project-brief.tsx.
+ * the deep-link helper a direct/shared link uses. The brief is serialized
+ * into the existing contact pipeline's `subject`/`message` fields —
+ * lib/contact.ts, lib/contact-submission.ts and app/actions/contact.ts stay
+ * unchanged. No React/DOM dependency here on purpose, so this module stays
+ * unit-testable in isolation (see project-brief.test.ts); the wizard UI
+ * lives in components/game/sections/project-brief.tsx.
+ *
+ * Steps 2–4 depend on the service chosen in step 1: each service has its
+ * own question set (label + options) for those three steps — see
+ * `briefQuestionsByService` in lib/content.ts and `getBriefQuestionSet`
+ * below. `ProjectBrief.answers` stores those three answers positionally
+ * (`answers[0]` is step 2's answer, and so on) since their meaning varies
+ * by service (e.g. Charlas y talleres' step 4 is "Honorarios", not a money
+ * bracket).
  */
 
-import { briefOptions } from "./content"
+import { briefOptions, briefQuestionsByService, type BriefQuestionSet } from "./content"
 
 export interface ProjectBrief {
   service: string
-  stage: string
-  timeline: string
-  budget: string
+  /** Answers to steps 2, 3 and 4, in that order — see `getBriefQuestionSet`. */
+  answers: [string, string, string]
   description: string
   name: string
   email: string
 }
 
-export type BriefField = keyof ProjectBrief
+/** One error slot per step-2/3/4 answer, positional like `ProjectBrief.answers`. */
+export type BriefAnswerErrors = [string | undefined, string | undefined, string | undefined]
 
-export type ValidateBriefResult =
-  | { ok: true; data: ProjectBrief }
-  | { ok: false; errors: Partial<Record<BriefField, string>> }
+export interface BriefErrors {
+  service?: string
+  answers?: BriefAnswerErrors
+  description?: string
+  name?: string
+  email?: string
+}
+
+export type ValidateBriefResult = { ok: true; data: ProjectBrief } | { ok: false; errors: BriefErrors }
 
 /** The wizard's six screens, in order (see the "What to build" spec in odd/tasks/project-brief.md). */
 export type BriefStep = 1 | 2 | 3 | 4 | 5 | 6
+
+/** Looks up the selected service's question set for steps 2–4, or `undefined` for an unrecognized service. */
+export function getBriefQuestionSet(service: string): BriefQuestionSet | undefined {
+  return briefQuestionsByService[service]
+}
 
 // Kept numerically in sync with lib/contact.ts's own limits on purpose: that
 // module's surface must stay unchanged, since the brief's name/email
@@ -43,6 +61,7 @@ const DESCRIPTION_MIN = 10
 const DESCRIPTION_MAX = 4000
 const SUBJECT_MAX = 150
 const MESSAGE_MAX = 5000
+const ANSWER_ERROR = "Elige una opción."
 
 /** Non-string values (missing fields, numbers, arrays, null, ...) count as empty. */
 function toStringOrEmpty(value: unknown): string {
@@ -60,34 +79,45 @@ function trimOnly(value: string): string {
 }
 
 /**
- * Validates and normalizes a raw brief answer set. Every pick-list field
- * (service/stage/timeline/budget) must belong to the matching
- * `briefOptions` list; name/email/description reuse lib/contact.ts's
- * limits and Spanish error messages. Every problem is reported at once,
- * like `validateContact`.
+ * Validates and normalizes a raw brief answer set. `service` must belong to
+ * `briefOptions.services`; each of the three `answers` must belong to the
+ * *selected service's own* question set (steps 2–4, see
+ * `getBriefQuestionSet`) — an unrecognized service can't validate any
+ * answer, since there's no question set to check them against.
+ * name/email/description reuse lib/contact.ts's limits and Spanish error
+ * messages. Every problem is reported at once, like `validateContact`.
  */
 export function validateBrief(raw: Record<string, unknown>): ValidateBriefResult {
   const service = collapseWhitespace(toStringOrEmpty(raw.service))
-  const stage = collapseWhitespace(toStringOrEmpty(raw.stage))
-  const timeline = collapseWhitespace(toStringOrEmpty(raw.timeline))
-  const budget = collapseWhitespace(toStringOrEmpty(raw.budget))
+  const rawAnswers = Array.isArray(raw.answers) ? raw.answers : []
+  const answers: [string, string, string] = [
+    collapseWhitespace(toStringOrEmpty(rawAnswers[0])),
+    collapseWhitespace(toStringOrEmpty(rawAnswers[1])),
+    collapseWhitespace(toStringOrEmpty(rawAnswers[2])),
+  ]
   const description = trimOnly(toStringOrEmpty(raw.description))
   const name = collapseWhitespace(toStringOrEmpty(raw.name))
   const email = trimOnly(toStringOrEmpty(raw.email))
 
-  const errors: Partial<Record<BriefField, string>> = {}
+  const errors: BriefErrors = {}
 
   if (!briefOptions.services.includes(service)) {
     errors.service = "Elige qué necesitas."
   }
-  if (!briefOptions.stages.includes(stage)) {
-    errors.stage = "Elige en qué etapa estás."
+
+  const questions = getBriefQuestionSet(service)
+  const answerErrors: BriefAnswerErrors = [undefined, undefined, undefined]
+  if (!questions) {
+    answerErrors[0] = ANSWER_ERROR
+    answerErrors[1] = ANSWER_ERROR
+    answerErrors[2] = ANSWER_ERROR
+  } else {
+    if (!questions.step2.options.includes(answers[0])) answerErrors[0] = ANSWER_ERROR
+    if (!questions.step3.options.includes(answers[1])) answerErrors[1] = ANSWER_ERROR
+    if (!questions.step4.options.includes(answers[2])) answerErrors[2] = ANSWER_ERROR
   }
-  if (!briefOptions.timelines.includes(timeline)) {
-    errors.timeline = "Elige para cuándo lo necesitas."
-  }
-  if (!briefOptions.budgets.includes(budget)) {
-    errors.budget = "Elige un presupuesto aproximado."
+  if (answerErrors.some((error) => error !== undefined)) {
+    errors.answers = answerErrors
   }
 
   if (description.length < DESCRIPTION_MIN) {
@@ -108,23 +138,29 @@ export function validateBrief(raw: Record<string, unknown>): ValidateBriefResult
     return { ok: false, errors }
   }
 
-  return { ok: true, data: { service, stage, timeline, budget, description, name, email } }
+  return { ok: true, data: { service, answers, description, name, email } }
 }
 
 /**
  * Whether the wizard may leave `step` given the answers collected so far —
  * gates the "Siguiente" button in components/game/sections/project-brief.tsx.
- * Step 5 (description + name + email) reuses the full `validateBrief` check
- * since every earlier field is already set by then; the summary step (6)
- * never blocks.
+ * Steps 2–4 check the answer against the *selected service's* own question
+ * set, so switching service without a matching question set (or with none
+ * selected yet) blocks every one of those steps. Step 5 (description + name
+ * + email) reuses the full `validateBrief` check since every earlier field
+ * is already set by then; the summary step (6) never blocks.
  */
 export function canAdvanceFromStep(step: BriefStep, brief: Partial<ProjectBrief>): boolean {
   if (step === 1) return briefOptions.services.includes(brief.service ?? "")
-  if (step === 2) return briefOptions.stages.includes(brief.stage ?? "")
-  if (step === 3) return briefOptions.timelines.includes(brief.timeline ?? "")
-  if (step === 4) return briefOptions.budgets.includes(brief.budget ?? "")
   if (step === 5) return validateBrief(brief).ok
-  return true
+  if (step === 6) return true
+
+  const questions = getBriefQuestionSet(brief.service ?? "")
+  if (!questions) return false
+  const answers = brief.answers ?? ["", "", ""]
+  if (step === 2) return questions.step2.options.includes(answers[0] ?? "")
+  if (step === 3) return questions.step3.options.includes(answers[1] ?? "")
+  return questions.step4.options.includes(answers[2] ?? "")
 }
 
 /** `Brief: <service>`, truncated (with an ellipsis) to stay within validateContact's subject limit. */
@@ -134,20 +170,23 @@ export function formatBriefSubject(brief: ProjectBrief): string {
 }
 
 /**
- * Readable multi-line text with every pick-list answer plus the free-text
+ * Readable multi-line text with every answer — under the *selected
+ * service's own* message labels (e.g. "Formato: Taller práctico",
+ * "Honorarios: Solo viáticos" for Charlas y talleres) — plus the free-text
  * description, capped at validateContact's message limit. Used both as the
  * email body and as the prefilled WhatsApp text (see lib/whatsapp.ts and
  * components/game/sections/project-brief.tsx).
  */
 export function formatBriefMessage(brief: ProjectBrief): string {
-  const message = [
-    `Servicio: ${brief.service}`,
-    `Etapa: ${brief.stage}`,
-    `Para cuándo: ${brief.timeline}`,
-    `Presupuesto aproximado: ${brief.budget}`,
-    "",
-    brief.description,
-  ].join("\n")
+  const questions = getBriefQuestionSet(brief.service)
+  const answerLines = questions
+    ? [
+        `${questions.step2.messageLabel}: ${brief.answers[0]}`,
+        `${questions.step3.messageLabel}: ${brief.answers[1]}`,
+        `${questions.step4.messageLabel}: ${brief.answers[2]}`,
+      ]
+    : []
+  const message = [`Servicio: ${brief.service}`, ...answerLines, "", brief.description].join("\n")
   return message.length > MESSAGE_MAX ? message.slice(0, MESSAGE_MAX) : message
 }
 

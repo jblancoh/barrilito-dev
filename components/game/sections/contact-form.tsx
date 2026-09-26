@@ -180,7 +180,10 @@ export function ContactFormSection({ nav }: { nav: BoardNav }) {
   // section's "Cotiza tu proyecto" CTA needs to flip whichever instance the
   // visitor ends up looking at, without racing against which one mounts or
   // reacts first.
-  const mode = useSyncExternalStore(subscribeContactMode, getContactMode, () => "message")
+  // The server snapshot must match the store's true default ("brief", see
+  // contact-mode-store.ts) or the server-rendered HTML and the first client
+  // render would disagree and React would report a hydration mismatch.
+  const mode = useSyncExternalStore(subscribeContactMode, getContactMode, () => "brief")
   const whatsappUrl = buildWhatsAppUrl(contactInfo.phone, contactInfo.whatsappMessage)
 
   // Supports a direct/shared `?brief=1#contact` link: whichever
@@ -220,6 +223,18 @@ export function ContactFormSection({ nav }: { nav: BoardNav }) {
           <div role="group" aria-label="Forma de contacto" className="mt-2 inline-flex w-fit gap-1 rounded-lg border p-1">
             <button
               type="button"
+              aria-pressed={mode === "brief"}
+              onClick={() => setContactMode("brief")}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                mode === "brief"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Pedir cotización
+            </button>
+            <button
+              type="button"
               aria-pressed={mode === "message"}
               onClick={() => setContactMode("message")}
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
@@ -229,18 +244,6 @@ export function ContactFormSection({ nav }: { nav: BoardNav }) {
               }`}
             >
               Mensaje libre
-            </button>
-            <button
-              type="button"
-              aria-pressed={mode === "brief"}
-              onClick={() => setContactMode("brief")}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                mode === "brief"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Armar brief
             </button>
           </div>
         </CardHeader>

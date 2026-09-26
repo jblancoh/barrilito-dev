@@ -16,16 +16,17 @@ import {
   canAdvanceFromStep,
   formatBriefMessage,
   formatBriefSubject,
+  getBriefQuestionSet,
   type BriefStep,
   type ProjectBrief,
 } from "@/lib/project-brief"
 import { buildWhatsAppUrl } from "@/lib/whatsapp"
 
+const EMPTY_ANSWERS: [string, string, string] = ["", "", ""]
+
 const EMPTY_BRIEF: ProjectBrief = {
   service: "",
-  stage: "",
-  timeline: "",
-  budget: "",
+  answers: EMPTY_ANSWERS,
   description: "",
   name: "",
   email: "",
@@ -33,7 +34,10 @@ const EMPTY_BRIEF: ProjectBrief = {
 
 const TOTAL_STEPS = 6
 
-type UpdateBriefField = <K extends keyof ProjectBrief>(field: K, value: ProjectBrief[K]) => void
+/** Index into `ProjectBrief.answers` for steps 2, 3 and 4. */
+type AnswerIndex = 0 | 1 | 2
+
+type UpdateBriefField = <K extends "description" | "name" | "email">(field: K, value: ProjectBrief[K]) => void
 
 interface RadioChipGroupProps {
   legend: string
@@ -140,15 +144,19 @@ function BriefSummaryStep({ brief, onSentAnother }: { brief: ProjectBrief; onSen
   const subject = formatBriefSubject(brief)
   const message = formatBriefMessage(brief)
   const whatsappUrl = buildWhatsAppUrl(contactInfo.phone, message)
+  // Guaranteed defined here: the wizard only reaches this step once step 1
+  // picked a real service (see canAdvanceFromStep), which is the only way
+  // getBriefQuestionSet returns undefined.
+  const questions = getBriefQuestionSet(brief.service)
 
   if (state.status === "success") {
     return (
       <div className="flex flex-col gap-3">
         <div className="rounded-lg bg-primary/10 p-4 font-medium">
-          {state.message ?? "¡Gracias por tu brief! Te responderé pronto."}
+          {state.message ?? "¡Gracias por tu cotización! Te responderé pronto."}
         </div>
         <Button type="button" variant="outline" size="sm" className="self-start" onClick={onSentAnother}>
-          Armar otro brief
+          Pedir otra cotización
         </Button>
       </div>
     )
@@ -163,18 +171,22 @@ function BriefSummaryStep({ brief, onSentAnother }: { brief: ProjectBrief; onSen
             <dt className="text-muted-foreground">Servicio</dt>
             <dd className="text-right font-medium">{brief.service}</dd>
           </div>
-          <div className="flex justify-between gap-3">
-            <dt className="text-muted-foreground">Etapa</dt>
-            <dd className="text-right font-medium">{brief.stage}</dd>
-          </div>
-          <div className="flex justify-between gap-3">
-            <dt className="text-muted-foreground">Para cuándo</dt>
-            <dd className="text-right font-medium">{brief.timeline}</dd>
-          </div>
-          <div className="flex justify-between gap-3">
-            <dt className="text-muted-foreground">Presupuesto</dt>
-            <dd className="text-right font-medium">{brief.budget}</dd>
-          </div>
+          {questions && (
+            <>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">{questions.step2.messageLabel}</dt>
+                <dd className="text-right font-medium">{brief.answers[0]}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">{questions.step3.messageLabel}</dt>
+                <dd className="text-right font-medium">{brief.answers[1]}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">{questions.step4.messageLabel}</dt>
+                <dd className="text-right font-medium">{brief.answers[2]}</dd>
+              </div>
+            </>
+          )}
           <div className="flex flex-col gap-1 border-t pt-2">
             <dt className="text-muted-foreground">Tu proyecto</dt>
             <dd className="whitespace-pre-wrap">{brief.description}</dd>
@@ -220,11 +232,12 @@ function BriefSummaryStep({ brief, onSentAnother }: { brief: ProjectBrief; onSen
 }
 
 /**
- * "Arma tu brief": a six-step guided wizard (service, stage, timeline,
- * budget, description + contact details, summary) that ends by sending the
- * same subject/message the free-form contact form sends — through the
- * unchanged `sendContactMessage` Server Action — or opening WhatsApp with
- * the brief prefilled. Not a price calculator: no owner prices ever appear.
+ * "Pedir cotización": a six-step guided wizard (service, then three
+ * service-specific questions, description + contact details, summary) that
+ * ends by sending the same subject/message the free-form contact form
+ * sends — through the unchanged `sendContactMessage` Server Action — or
+ * opening WhatsApp with the brief prefilled. Not a price calculator: no
+ * owner prices ever appear.
  */
 export function ProjectBriefWizard() {
   const uid = useId()
@@ -236,6 +249,23 @@ export function ProjectBriefWizard() {
     setBrief((prev) => ({ ...prev, [field]: value }))
   }
 
+  // Steps 2–4 ask different questions depending on the service, so their
+  // options only make sense for the service that was selected when they
+  // were answered — switching service clears them, or a stale answer from
+  // another service's question set could otherwise be submitted.
+  const handleServiceChange = (service: string) => {
+    setBrief((prev) => (prev.service === service ? prev : { ...prev, service, answers: EMPTY_ANSWERS }))
+  }
+
+  const updateAnswer = (index: AnswerIndex, value: string) => {
+    setBrief((prev) => {
+      const answers = [...prev.answers] as [string, string, string]
+      answers[index] = value
+      return { ...prev, answers }
+    })
+  }
+
+  const questions = getBriefQuestionSet(brief.service)
   const canAdvance = canAdvanceFromStep(step, brief)
 
   const goNext = () => {
@@ -273,34 +303,34 @@ export function ProjectBriefWizard() {
           name={`${uid}-service`}
           options={briefOptions.services}
           value={brief.service}
-          onChange={(value) => updateField("service", value)}
+          onChange={handleServiceChange}
         />
       )}
-      {step === 2 && (
+      {step === 2 && questions && (
         <RadioChipGroup
-          legend="¿En qué etapa estás?"
-          name={`${uid}-stage`}
-          options={briefOptions.stages}
-          value={brief.stage}
-          onChange={(value) => updateField("stage", value)}
+          legend={questions.step2.heading}
+          name={`${uid}-answer2`}
+          options={questions.step2.options}
+          value={brief.answers[0]}
+          onChange={(value) => updateAnswer(0, value)}
         />
       )}
-      {step === 3 && (
+      {step === 3 && questions && (
         <RadioChipGroup
-          legend="¿Para cuándo?"
-          name={`${uid}-timeline`}
-          options={briefOptions.timelines}
-          value={brief.timeline}
-          onChange={(value) => updateField("timeline", value)}
+          legend={questions.step3.heading}
+          name={`${uid}-answer3`}
+          options={questions.step3.options}
+          value={brief.answers[1]}
+          onChange={(value) => updateAnswer(1, value)}
         />
       )}
-      {step === 4 && (
+      {step === 4 && questions && (
         <RadioChipGroup
-          legend="Presupuesto aproximado (MXN)"
-          name={`${uid}-budget`}
-          options={briefOptions.budgets}
-          value={brief.budget}
-          onChange={(value) => updateField("budget", value)}
+          legend={questions.step4.heading}
+          name={`${uid}-answer4`}
+          options={questions.step4.options}
+          value={brief.answers[2]}
+          onChange={(value) => updateAnswer(2, value)}
         />
       )}
       {step === 5 && <BriefDetailsStep brief={brief} onChange={updateField} />}
