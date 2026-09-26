@@ -127,7 +127,7 @@ export const featuredCases: Case[] = [
     description:
       "Gestor de torneos deportivos que va camino a red social y mapa de torneos en México. Demo en construcción.",
     highlights: ["Gestión de torneos", "Rumbo a red social + mapa de torneos"],
-    tags: ["React Native", "Producto propio"],
+    tags: ["Deporte", "Producto propio"],
     link: "https://demo.thekickoff.lat/",
   },
 ]

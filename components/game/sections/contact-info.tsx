@@ -15,7 +15,7 @@ export function ContactInfoSection({ nav }: { nav: BoardNav }) {
       <div className="overflow-hidden rounded-xl border border-secondary/20 bg-card shadow">
         <div className="h-2 bg-gradient-to-r from-secondary via-accent to-primary" />
         <div className="flex flex-col gap-1.5 p-6">
-          <div className="text-2xl font-semibold leading-none tracking-tight">Hablemos</div>
+          <div className="text-2xl font-semibold leading-none tracking-tight">Escríbeme</div>
           <div className="text-sm text-muted-foreground">La forma más rápida de encontrarme.</div>
         </div>
         <div className="flex flex-col gap-6 px-6 pb-6">

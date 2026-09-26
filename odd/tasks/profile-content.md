@@ -38,15 +38,15 @@ Mode: strict (source: user global CLAUDE.md "Strict TDD Mode: enabled"). Runner:
 Pure logic/data invariants go RED→GREEN→REFACTOR; section markup verified by `tsc`, lint, build and browser.
 
 ## Delivery
-Strategy: ask-on-risk. Forecast: ~600 authored changed lines (asset excluded) → exceeds the ~400
-budget; chain strategy to be asked before any PR. Work-unit commits on the feature branch; push/PR are the user's decision.
+Strategy: ask-on-risk. Forecast: ~600 authored changed lines (asset excluded); actual ~983 → exceeds the ~400
+budget; user chose a single PR (asked 2026-09-25). Work-unit commits on the feature branch; push/PR are the user's decision.
 RDD: on (global). Review assessed per work-unit commit.
 
 ## Tasks
 - [x] T1 — Content model + helpers: restructure `lib/content.ts` per brief; WhatsApp URL helper; invariant tests. Route: delegated writer (writer trigger: 2+ non-trivial files).
 - [x] T2 — Sections: about (hero, bio, manifesto, nickname, community), skills→"Cómo trabajo" (pillars + tools strip), projects→"Casos", services→offer, contact-info (WhatsApp, community invite, no phone/schedule), remove "Descargar CV", shortcut copy. Route: delegated writer.
 - [x] T3 — Chrome & metadata: navbar labels, `lib/site-metadata.ts`, OG/Twitter copy, footer cleanup (broken "Blog" link, newsletter, tagline). Route: delegated writer.
-- [ ] T4 — Browser verification (3D + lite, light/dark, mobile) by the parent.
+- [x] T4 — Browser verification (3D + lite, light/dark, mobile) by the parent.
 
 ## Acceptance criteria
 - No `#` links or `/placeholder.svg` remain in live content; no "BarrilitoDev" as the person's name in title/meta.
@@ -56,7 +56,7 @@ RDD: on (global). Review assessed per work-unit commit.
 
 ## Progress
 - Brief approved and saved (`docs/profile-brief.md`).
-- T1 done (commit pending — see below). `lib/content.ts` restructured into `profile`, `pillars`, `tools`,
+- T1 done — `6be76f4`. `lib/content.ts` restructured into `profile`, `pillars`, `tools`,
   `featuredCases` (4), `secondaryCases` (3), `offer` (5 services + terms + no-hago), `community`,
   `contactInfo` (phone kept as data only). Added `lib/whatsapp.ts` (`digitsOnly`, `buildWhatsAppUrl`).
   Old `skills`/`projects` kept as clearly-marked `@deprecated` legacy exports so the out-of-scope dead
@@ -70,7 +70,7 @@ RDD: on (global). Review assessed per work-unit commit.
     (T2-scoped files still referencing the pre-restructure shape) — expected until T2 lands.
   - `pnpm lint`: passes (only pre-existing `no-img-element` warnings).
 
-- T2 done (commit pending — see below). Rewrote `components/game/sections/{about,skills,projects,services,contact-info}.tsx`
+- T2 done — `31c85b8`. Rewrote `components/game/sections/{about,skills,projects,services,contact-info}.tsx`
   against the new content shape; `contact-form.tsx` got a small copy-only refresh (title, description, copyright
   name), logic untouched. `about.tsx` now carries hero + bio + nickname story + manifesto; "Descargar CV" removed,
   CTAs are "Ver casos" (→ `projects` stop) and "Hablemos" (→ `contact` stop). `contact-info.tsx` has the big
@@ -84,7 +84,7 @@ RDD: on (global). Review assessed per work-unit commit.
     `projects.tsx` for case images carries its own eslint-disable comment, consistent with the codebase's
     existing pattern for the same rule).
 
-- T3 done (commit pending — see below). `navbar.tsx` NAV_LINKS labels updated to match the new section
+- T3 done — `6af2a69`. `navbar.tsx` NAV_LINKS labels updated to match the new section
   labels ("Cómo trabajo", "Casos", "Oferta"); brand text ("BarrilitoDev"/"barrilito.dev") left as the site's
   own brand, not a person-name claim, so untouched in the navbar logo. `lib/site-metadata.ts` title/description
   updated to the approved metadata. `app/opengraph-image.tsx` (and the twitter image, which re-exports it)
@@ -99,5 +99,17 @@ RDD: on (global). Review assessed per work-unit commit.
   - `pnpm lint`: passes (same pre-existing `no-img-element` warnings only).
   - `pnpm build`: succeeds — `next build` compiles, type-checks, lints and prerenders all 7 static routes.
 
+- T4 done (parent, browser): 3D board hero renders the new copy; lite mode page text matches the brief for
+  all six sections; mobile 375px light mode: no horizontal overflow (scrollWidth 375), 0 `href="#"`/placeholder
+  images, WhatsApp link `https://wa.me/529933600042?text=…`; no console errors. Fixes found and applied:
+  contact-form snake subtitle "Volver a Proyectos"→"Volver a Casos"; contact-info card title "Hablemos"→"Escríbeme"
+  (5 repeated "Hablemos"); TheKickoff tag "React Native" (not in brief) → "Deporte". Re-checked: `pnpm test`
+  196/196, `npx tsc --noEmit` clean.
+- Writer decision kept: legacy `skills`/`projects` exports marked `@deprecated` so dead components still compile.
+
+## Follow-ups (not in this feature)
+- Delete dead legacy components (`hero-section.tsx`, `projects-section.tsx`, `skills-section.tsx`) and the deprecated exports.
+- Clainor public URL/metrics, Directorio Solidario screenshots, updated CV + "Descargar CV", Cal.com booking.
+
 ## Next step
-T4 (parent) — browser verification of the 3D board and lite/SEO fallback, light/dark, mobile width.
+Native review of the branch, then push + single PR (user decision).

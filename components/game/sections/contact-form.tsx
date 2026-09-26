@@ -194,7 +194,7 @@ export function ContactFormSection({ nav }: { nav: BoardNav }) {
         <ShortcutCard
           code="24 ▼ 12"
           title="Serpiente"
-          subtitle="Volver a Proyectos"
+          subtitle="Volver a Casos"
           tone="destructive"
           onClick={() => nav.shortcut("snake", 0)}
         />
