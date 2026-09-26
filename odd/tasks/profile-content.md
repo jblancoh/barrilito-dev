@@ -44,7 +44,7 @@ RDD: on (global). Review assessed per work-unit commit.
 
 ## Tasks
 - [x] T1 — Content model + helpers: restructure `lib/content.ts` per brief; WhatsApp URL helper; invariant tests. Route: delegated writer (writer trigger: 2+ non-trivial files).
-- [ ] T2 — Sections: about (hero, bio, manifesto, nickname, community), skills→"Cómo trabajo" (pillars + tools strip), projects→"Casos", services→offer, contact-info (WhatsApp, community invite, no phone/schedule), remove "Descargar CV", shortcut copy. Route: delegated writer.
+- [x] T2 — Sections: about (hero, bio, manifesto, nickname, community), skills→"Cómo trabajo" (pillars + tools strip), projects→"Casos", services→offer, contact-info (WhatsApp, community invite, no phone/schedule), remove "Descargar CV", shortcut copy. Route: delegated writer.
 - [ ] T3 — Chrome & metadata: navbar labels, `lib/site-metadata.ts`, OG/Twitter copy, footer cleanup (broken "Blog" link, newsletter, tagline). Route: delegated writer.
 - [ ] T4 — Browser verification (3D + lite, light/dark, mobile) by the parent.
 
@@ -70,5 +70,19 @@ RDD: on (global). Review assessed per work-unit commit.
     (T2-scoped files still referencing the pre-restructure shape) — expected until T2 lands.
   - `pnpm lint`: passes (only pre-existing `no-img-element` warnings).
 
+- T2 done (commit pending — see below). Rewrote `components/game/sections/{about,skills,projects,services,contact-info}.tsx`
+  against the new content shape; `contact-form.tsx` got a small copy-only refresh (title, description, copyright
+  name), logic untouched. `about.tsx` now carries hero + bio + nickname story + manifesto; "Descargar CV" removed,
+  CTAs are "Ver casos" (→ `projects` stop) and "Hablemos" (→ `contact` stop). `contact-info.tsx` has the big
+  WhatsApp button (via `buildWhatsAppUrl`), no phone/schedule display, community block + invite. Board stop labels
+  in `board-config.ts` updated to match: "Habilidades"→"Cómo trabajo", "Proyectos"→"Casos", "Servicios"→"Oferta"
+  (keys/hashes unchanged; `board-config.test.ts` only asserts keys/colors, not labels, so it still passes).
+  Community block placed in contact-info (not duplicated in about) per the "your call" instruction.
+  - `pnpm test`: 196/196 passed.
+  - `npx tsc --noEmit`: clean (0 errors) — the T1 gap in services.tsx/contact-info.tsx is now closed.
+  - `pnpm lint`: passes (only the same pre-existing `no-img-element` warnings; the new `<img>` in
+    `projects.tsx` for case images carries its own eslint-disable comment, consistent with the codebase's
+    existing pattern for the same rule).
+
 ## Next step
-T2 — rewrite the section components against the new content shape (this will also turn tsc green).
+T3 — navbar labels, site metadata, OG/Twitter copy, footer cleanup.

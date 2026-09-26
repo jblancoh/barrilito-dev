@@ -179,8 +179,8 @@ export function ContactFormSection({ nav }: { nav: BoardNav }) {
       <Card className="overflow-hidden border-primary/20">
         <div className="h-2 bg-gradient-to-r from-primary via-secondary to-accent" />
         <CardHeader>
-          <CardTitle>Envíame un mensaje</CardTitle>
-          <CardDescription>Completa el formulario y me pondré en contacto contigo lo antes posible.</CardDescription>
+          <CardTitle>Cuéntame de tu proyecto</CardTitle>
+          <CardDescription>Completa el formulario y te respondo lo antes posible.</CardDescription>
         </CardHeader>
         <CardContent>
           <ContactFormFields
@@ -208,7 +208,7 @@ export function ContactFormSection({ nav }: { nav: BoardNav }) {
       </div>
 
       <p className="border-t pt-4 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} BarrilitoDev. Todos los derechos reservados.
+        © {new Date().getFullYear()} Jonathan Blanco. Todos los derechos reservados.
       </p>
     </section>
   )
