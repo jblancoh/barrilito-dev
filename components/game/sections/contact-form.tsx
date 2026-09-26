@@ -19,6 +19,9 @@ import { contactInfo, socialLinks } from "@/lib/content"
 import { buildWhatsAppUrl } from "@/lib/whatsapp"
 import type { BoardNav } from "../board-nav"
 import { ShortcutCard } from "../shortcut-card"
+import { ProjectBriefWizard } from "./project-brief"
+
+type ContactMode = "message" | "brief"
 
 interface FormFields {
   name: string
@@ -171,6 +174,7 @@ function ContactFormFields({ onSendAnother }: { onSendAnother: () => void }) {
 
 export function ContactFormSection({ nav }: { nav: BoardNav }) {
   const [formInstanceKey, setFormInstanceKey] = useState(0)
+  const [mode, setMode] = useState<ContactMode>("message")
   const whatsappUrl = buildWhatsAppUrl(contactInfo.phone, contactInfo.whatsappMessage)
 
   return (
@@ -196,12 +200,44 @@ export function ContactFormSection({ nav }: { nav: BoardNav }) {
         <CardHeader>
           <CardTitle>Cuéntame de tu proyecto</CardTitle>
           <CardDescription>Completa el formulario y te respondo lo antes posible.</CardDescription>
+          <div role="tablist" aria-label="Forma de contacto" className="mt-2 inline-flex w-fit gap-1 rounded-lg border p-1">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "message"}
+              onClick={() => setMode("message")}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                mode === "message"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Mensaje libre
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "brief"}
+              onClick={() => setMode("brief")}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                mode === "brief"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Armar brief
+            </button>
+          </div>
         </CardHeader>
         <CardContent>
-          <ContactFormFields
-            key={formInstanceKey}
-            onSendAnother={() => setFormInstanceKey((key) => key + 1)}
-          />
+          {mode === "message" ? (
+            <ContactFormFields
+              key={formInstanceKey}
+              onSendAnother={() => setFormInstanceKey((key) => key + 1)}
+            />
+          ) : (
+            <ProjectBriefWizard />
+          )}
         </CardContent>
       </Card>
 

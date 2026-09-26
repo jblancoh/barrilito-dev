@@ -40,7 +40,7 @@ Work-unit commits on the feature branch; push/PR are the user's decision.
 
 ## Tasks
 - [x] T1 Pure brief model + `briefOptions` content (tests). Route: delegated writer (2 non-trivial files: module + test).
-- [ ] T2 Brief wizard component + contact-section toggle. Route: delegated writer (2+ non-trivial files).
+- [x] T2 Brief wizard component + contact-section toggle. Route: delegated writer (2+ non-trivial files).
 - [ ] T3 Services CTA deep link to brief mode + copy polish. Route: delegated writer (same bounded writer).
 
 ## Acceptance criteria
@@ -61,5 +61,16 @@ Work-unit commits on the feature branch; push/PR are the user's decision.
   Chose plain `string[]` option lists (value === label) over `{value,label}` pairs — simpler,
   matches existing content.ts conventions (e.g. `community.items`).
 
+- T2 done (commit pending SHA below). New `components/game/sections/project-brief.tsx`
+  (`ProjectBriefWizard`, native `<input type="radio">` chips per step — arrow-key nav and mutual
+  exclusivity come free from the browser, no custom keyboard code needed) and a "Mensaje libre |
+  Armar brief" tab toggle in `contact-form.tsx` (default: Mensaje libre). Step-advance logic
+  reuses `canAdvanceFromStep` from T1 (no new untested component logic). `pnpm exec tsc --noEmit`:
+  clean. `pnpm lint`: only pre-existing `<img>` warnings in unrelated files. `pnpm test`: 228/229
+  passed; the 1 failure (`lib/contact.ts`'s `createRateLimiter` "prunes expired entries" test)
+  is a pre-existing 5000-iteration/5000ms-timeout test unrelated to this change — it passed
+  in isolation and when re-run alone, only times out under full-suite parallel load; `lib/contact.ts`
+  is out of scope (must stay unchanged per the constraints).
+
 ## Next step
-T2: brief wizard component (components/game/sections/project-brief.tsx) + contact-section toggle.
+T3: Services CTA deep link to brief mode.
