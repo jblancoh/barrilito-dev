@@ -31,4 +31,9 @@ describe("buildWhatsAppUrl", () => {
   it("does not append a text param for an empty message", () => {
     expect(buildWhatsAppUrl("529933600042", "")).toBe("https://wa.me/529933600042")
   })
+
+  it("throws when the phone has no digits instead of building a recipient-less link", () => {
+    expect(() => buildWhatsAppUrl("")).toThrow(/phone/i)
+    expect(() => buildWhatsAppUrl("+ ( ) -")).toThrow(/phone/i)
+  })
 })

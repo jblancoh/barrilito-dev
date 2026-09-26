@@ -19,15 +19,16 @@ export function ContactInfoSection({ nav }: { nav: BoardNav }) {
           <div className="text-sm text-muted-foreground">La forma más rápida de encontrarme.</div>
         </div>
         <div className="flex flex-col gap-6 px-6 pb-6">
-          <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-            <Button
-              size="lg"
-              className="w-full gap-2 bg-gradient-to-r from-primary to-secondary text-primary-foreground hover:from-primary/90 hover:to-secondary/90"
-            >
+          <Button
+            size="lg"
+            asChild
+            className="w-full gap-2 bg-gradient-to-r from-primary to-secondary text-primary-foreground hover:from-primary/90 hover:to-secondary/90"
+          >
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
               <MessageCircle className="h-5 w-5" />
               Escríbeme por WhatsApp
-            </Button>
-          </a>
+            </a>
+          </Button>
 
           <div className="flex items-start gap-4">
             <div className="rounded-full bg-accent/10 p-3">

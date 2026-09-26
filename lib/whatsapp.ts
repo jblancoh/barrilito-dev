@@ -12,10 +12,12 @@ export function digitsOnly(phone: string): string {
 /**
  * Builds a `https://wa.me/<digits>` URL, optionally with a prefilled,
  * URL-encoded message. The phone number itself never needs to be displayed
- * anywhere in the UI — only this link.
+ * anywhere in the UI — only this link. Throws when the phone has no digits,
+ * so bad contact data fails loudly instead of opening a chat with no recipient.
  */
 export function buildWhatsAppUrl(phone: string, message?: string): string {
   const digits = digitsOnly(phone)
+  if (!digits) throw new Error(`Invalid WhatsApp phone: "${phone}" has no digits`)
   const base = `https://wa.me/${digits}`
   return message ? `${base}?text=${encodeURIComponent(message)}` : base
 }

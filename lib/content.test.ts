@@ -46,7 +46,16 @@ describe("content invariants", () => {
     expect(haystack).not.toContain("vibecod")
   })
 
-  it("keeps the WhatsApp phone number as data only (not part of the public copy strings)", () => {
+  it("stores a WhatsApp-ready phone number in the contact data", () => {
     expect(contactInfo.phone.replace(/\D/g, "")).toBe("529933600042")
+  })
+
+  it("never repeats the phone number in the rest of the public copy", () => {
+    const { phone, ...publicContact } = contactInfo
+    const digits = phone.replace(/\D/g, "")
+    const haystack = collectStrings({ profile, pillars, tools, featuredCases, secondaryCases, offer, community, publicContact })
+      .map((text) => text.replace(/\D/g, ""))
+      .join(" ")
+    expect(haystack).not.toContain(digits.slice(-10))
   })
 })

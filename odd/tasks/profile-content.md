@@ -113,10 +113,14 @@ RDD: on (global). Review assessed per work-unit commit.
   Advisory (non-blocking): R3-phone-test-misnamed (`lib/content.test.ts:49`), R3-whatsapp-empty-phone
   (`lib/whatsapp.ts:17`), R3-nested-interactive (`contact-info.tsx:22`, use `Button asChild`).
 
+- Advisories fixed (user request): `buildWhatsAppUrl` throws on a phone without digits (RED observed:
+  "expected [Function] to throw an error", then GREEN); phone test renamed + new test that the number is not
+  repeated in public copy; WhatsApp CTA uses `Button asChild` (no nested interactive elements).
+  `pnpm test` 198/198, `npx tsc --noEmit` clean, `pnpm lint` 0 errors, `pnpm build` OK.
+
 ## Follow-ups (not in this feature)
-- Review advisories above.
 - Delete dead legacy components (`hero-section.tsx`, `projects-section.tsx`, `skills-section.tsx`) and the deprecated exports.
 - Clainor public URL/metrics, Directorio Solidario screenshots, updated CV + "Descargar CV", Cal.com booking.
 
 ## Next step
-Push + single PR (user decision); optionally address review advisories first.
+Push + single PR (approved by the user).
