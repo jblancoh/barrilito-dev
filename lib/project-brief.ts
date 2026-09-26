@@ -163,9 +163,9 @@ export function canAdvanceFromStep(step: BriefStep, brief: Partial<ProjectBrief>
   return questions.step4.options.includes(answers[2] ?? "")
 }
 
-/** `Brief: <service>`, truncated (with an ellipsis) to stay within validateContact's subject limit. */
+/** `Cotización: <service>`, truncated (with an ellipsis) to stay within validateContact's subject limit. */
 export function formatBriefSubject(brief: ProjectBrief): string {
-  const subject = `Brief: ${brief.service}`
+  const subject = `Cotización: ${brief.service}`
   return subject.length > SUBJECT_MAX ? `${subject.slice(0, SUBJECT_MAX - 1)}…` : subject
 }
 

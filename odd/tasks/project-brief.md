@@ -54,6 +54,8 @@ Work-unit commits on the feature branch; push/PR are the user's decision.
   - MVPs y landings rápidas: Punto de partida (Solo es una idea · Tengo diseño · Quiero rehacer algo que ya existe) / ¿Para cuándo? / Presupuesto.
   - Charlas y talleres: Formato (Charla · Taller práctico · Ambos) / Fecha del evento (En menos de 1 mes · En 1 a 3 meses · Aún sin fecha) / Honorarios (Evento pagado · Solo viáticos · Evento comunitario sin pago) — no money brackets.
 
+- [x] T6 Copy polish (owner request): per-service step-5 copy (Charlas: "Tu evento" / "¿De qué trata el evento y quién asistirá?"), summary label follows it, email subject "Cotización: <service>". Route: inline (4 small mechanical edits, already understood). TDD: RED 2 failing tests (subject, Charlas description copy) → GREEN 242/242; tsc, lint, build OK; browser checked Charlas vs MVPs step 5.
+
 ## Acceptance criteria
 - Wizard keeps answers when going back/forward; one question per step; keyboard accessible.
 - Email path produces subject `Brief: <service>` and a readable multi-line message; anti-spam unchanged.

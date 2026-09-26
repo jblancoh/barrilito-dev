@@ -214,6 +214,19 @@ export interface BriefQuestionSet {
   step2: BriefQuestion
   step3: BriefQuestion
   step4: BriefQuestion
+  /** Copy for step 5's free-text field, also reused as its summary label. */
+  description: BriefDescriptionCopy
+}
+
+export interface BriefDescriptionCopy {
+  label: string
+  placeholder: string
+}
+
+/** Step 5 copy for every service except Charlas y talleres, which describes an event instead. */
+export const PROJECT_DESCRIPTION: BriefDescriptionCopy = {
+  label: "Tu proyecto",
+  placeholder: "¿Qué problema quieres resolver?",
 }
 
 /** Reused by every service whose step 3 is just "when do you need this" (everyone except Charlas y talleres, which asks for an event date instead). */
@@ -239,6 +252,7 @@ const DEFAULT_QUESTION_SET: BriefQuestionSet = {
   },
   step3: GENERIC_TIMING_QUESTION,
   step4: GENERIC_BUDGET_QUESTION,
+  description: PROJECT_DESCRIPTION,
 }
 
 /**
@@ -259,6 +273,7 @@ export const briefQuestionsByService: Record<string, BriefQuestionSet> = {
     },
     step3: GENERIC_TIMING_QUESTION,
     step4: GENERIC_BUDGET_QUESTION,
+    description: PROJECT_DESCRIPTION,
   },
   "Asesoría a equipos": {
     step2: {
@@ -268,6 +283,7 @@ export const briefQuestionsByService: Record<string, BriefQuestionSet> = {
     },
     step3: GENERIC_TIMING_QUESTION,
     step4: GENERIC_BUDGET_QUESTION,
+    description: PROJECT_DESCRIPTION,
   },
   "MVPs y landings rápidas": {
     step2: {
@@ -277,6 +293,7 @@ export const briefQuestionsByService: Record<string, BriefQuestionSet> = {
     },
     step3: GENERIC_TIMING_QUESTION,
     step4: GENERIC_BUDGET_QUESTION,
+    description: PROJECT_DESCRIPTION,
   },
   "Charlas y talleres": {
     step2: {
@@ -293,6 +310,10 @@ export const briefQuestionsByService: Record<string, BriefQuestionSet> = {
       heading: "Honorarios",
       messageLabel: "Honorarios",
       options: ["Evento pagado", "Solo viáticos", "Evento comunitario sin pago"],
+    },
+    description: {
+      label: "Tu evento",
+      placeholder: "¿De qué trata el evento y quién asistirá?",
     },
   },
   Otro: DEFAULT_QUESTION_SET,

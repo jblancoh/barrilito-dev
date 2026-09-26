@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { initialContactFormState, type ContactFormState } from "@/lib/contact-submission"
-import { briefOptions, contactInfo } from "@/lib/content"
+import { briefOptions, contactInfo, PROJECT_DESCRIPTION } from "@/lib/content"
 import {
   canAdvanceFromStep,
   formatBriefMessage,
@@ -90,14 +90,15 @@ function RadioChipGroup({ legend, name, options, value, onChange }: RadioChipGro
 }
 
 function BriefDetailsStep({ brief, onChange }: { brief: ProjectBrief; onChange: UpdateBriefField }) {
+  const descriptionCopy = getBriefQuestionSet(brief.service)?.description ?? PROJECT_DESCRIPTION
   return (
     <fieldset className="flex flex-col gap-4">
       <legend className="text-lg font-semibold leading-tight">Cuéntame en 2–3 líneas</legend>
       <label className="flex flex-col gap-2 text-sm font-medium">
-        Tu proyecto
+        {descriptionCopy.label}
         <Textarea
           rows={4}
-          placeholder="¿Qué problema quieres resolver?"
+          placeholder={descriptionCopy.placeholder}
           value={brief.description}
           onChange={(e) => onChange("description", e.target.value)}
         />
@@ -188,7 +189,7 @@ function BriefSummaryStep({ brief, onSentAnother }: { brief: ProjectBrief; onSen
             </>
           )}
           <div className="flex flex-col gap-1 border-t pt-2">
-            <dt className="text-muted-foreground">Tu proyecto</dt>
+            <dt className="text-muted-foreground">{(questions?.description ?? PROJECT_DESCRIPTION).label}</dt>
             <dd className="whitespace-pre-wrap">{brief.description}</dd>
           </div>
         </dl>

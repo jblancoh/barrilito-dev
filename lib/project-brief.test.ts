@@ -42,6 +42,13 @@ describe("getBriefQuestionSet", () => {
     )
   })
 
+  it("words the description step for an event (not a project) in Charlas y talleres", () => {
+    const talk = getBriefQuestionSet("Charlas y talleres")
+    expect(talk?.description.label).toBe("Tu evento")
+    expect(talk?.description.placeholder).toMatch(/evento/)
+    expect(getBriefQuestionSet(DEFAULT_SERVICE)?.description.label).toBe("Tu proyecto")
+  })
+
   it("shares the same question set between 'Socio técnico para startups' and 'Otro'", () => {
     expect(getBriefQuestionSet("Otro")).toEqual(getBriefQuestionSet("Socio técnico para startups"))
   })
@@ -232,8 +239,8 @@ describe("canAdvanceFromStep", () => {
 })
 
 describe("formatBriefSubject", () => {
-  it("formats as 'Brief: <service>'", () => {
-    expect(formatBriefSubject(valid)).toBe(`Brief: ${valid.service}`)
+  it("formats as 'Cotización: <service>'", () => {
+    expect(formatBriefSubject(valid)).toBe(`Cotización: ${valid.service}`)
   })
 
   it("passes validateContact's subject rules for every real service option", () => {
