@@ -20,8 +20,8 @@ Touch navigation uses a horizontal swipe (left = roll, right = back); vertical g
 - Delivery strategy: ask-on-risk; forecast ~150 authored lines, single PR.
 
 ## Tasks
-- [ ] T1 — Horizontal swipe classifier (`components/game/touch-gesture.ts` + tests) wired into touch handlers. Route: inline (small, understood; 1 new pure module + 1 handler edit).
-- [ ] T2 — Compact HUD on narrow viewports + `inputHint(coarse)` helper with tests. Route: inline.
+- [x] T1 — Horizontal swipe classifier (`components/game/touch-gesture.ts` + tests) wired into touch handlers. Route: inline (small, understood; 1 new pure module + 1 handler edit).
+- [x] T2 — Compact HUD on narrow viewports + `inputHint(coarse)` helper with tests. Route: inline.
 
 ## Acceptance criteria
 - Vertical swipes never change the square; a left swipe (>= 60px, horizontal-dominant, not starting at a screen edge) rolls, a right swipe goes back.
@@ -34,6 +34,15 @@ Touch navigation uses a horizontal swipe (left = roll, right = back); vertical g
 
 ## Progress
 - Created 2026-09-26 on branch `claude/mobile-instructions-box-104141` (base main@0841ecf).
+- T1 done in `affcee4`: RED observed (module missing), GREEN 6/6. Review assess: medium, under_budget (pending in slice).
+- T2 done in `ef1cc62`: RED observed (`inputHint is not a function`), GREEN 8/8. Review assess: medium, under_budget.
+
+## Verification evidence
+- `npm test`: 206/206 passed. `npx tsc --noEmit`: clean. `npm run lint`: only pre-existing warnings in untouched files.
+- Browser (375x812, dark): compact HUD in one row, does not overlap the section panel; hint reads "Desliza ← tira · → regresa".
+- Synthetic TouchEvents: vertical up on panel, vertical down on board, and edge swipe kept "Tu turno"; left swipe switched to "Avanzando…". Animation did not advance because the pane was `visibilityState: hidden` (rAF paused), not a code issue.
+- Desktop: original card and scroll hint unchanged.
+- Branch total vs base: 214 insertions, 45 deletions (includes this doc); single PR.
 
 ## Next step
-T1.
+Push and open the PR when the user decides.
