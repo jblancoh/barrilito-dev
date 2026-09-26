@@ -22,8 +22,8 @@ const rateLimiter: RateLimiter = createRateLimiter({
 })
 
 /** First entry of `x-forwarded-for`, else `x-real-ip`, else "unknown". */
-function resolveClientKey(): string {
-  const headerList = headers()
+async function resolveClientKey(): Promise<string> {
+  const headerList = await headers()
 
   const forwardedFor = headerList.get("x-forwarded-for")
   if (forwardedFor) {
@@ -38,7 +38,7 @@ function resolveClientKey(): string {
 }
 
 /**
- * Server Action bound to the contact form via `useFormState`. Thin adapter
+ * Server Action bound to the contact form via `useActionState`. Thin adapter
  * only: reads env config and the request's IP, then delegates every
  * decision to the pure `handleContactSubmission` orchestrator.
  */
@@ -61,7 +61,7 @@ export async function sendContactMessage(
 
   return handleContactSubmission(fields, {
     now: Date.now(),
-    clientKey: resolveClientKey(),
+    clientKey: await resolveClientKey(),
     rateLimiter,
     send: (email) => sendWithResend(email, { apiKey: apiKey ?? "" }),
     config: { from, to, apiKeyPresent: Boolean(apiKey) },

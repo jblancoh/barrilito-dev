@@ -1,13 +1,7 @@
-/// <reference types="react-dom/canary" />
 "use client"
 
-// The reference above only loads the ambient `useFormState`/`useFormStatus`
-// type declarations for "react-dom" (they ship in @types/react-dom's canary
-// types today, not its default ones) — it is compiled away and never
-// becomes a runtime import. Next.js aliases the "react-dom" import below to
-// a build that includes these hooks at runtime.
-import { useEffect, useState, useSyncExternalStore, type ChangeEvent } from "react"
-import { useFormState, useFormStatus } from "react-dom"
+import { useActionState, useEffect, useState, useSyncExternalStore, type ChangeEvent } from "react"
+import { useFormStatus } from "react-dom"
 import { Github, Linkedin, MapPin, MessageCircle, Twitter } from "lucide-react"
 import { sendContactMessage } from "@/app/actions/contact"
 import { Button } from "@/components/ui/button"
@@ -42,7 +36,7 @@ function SubmitButton() {
 }
 
 function ContactFormFields({ onSendAnother }: { onSendAnother: () => void }) {
-  const [state, formAction] = useFormState<ContactFormState, FormData>(sendContactMessage, initialContactFormState)
+  const [state, formAction] = useActionState<ContactFormState, FormData>(sendContactMessage, initialContactFormState)
   const [fields, setFields] = useState<FormFields>(EMPTY_FIELDS)
   // Rendered as "" on both server and first client render, then filled in
   // by this effect, so the hidden input never causes a hydration mismatch.
