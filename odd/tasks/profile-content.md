@@ -107,9 +107,16 @@ RDD: on (global). Review assessed per work-unit commit.
   196/196, `npx tsc --noEmit` clean.
 - Writer decision kept: legacy `skills`/`projects` exports marked `@deprecated` so dead components still compile.
 
+- T4 fixes — `4aaaaf2`.
+- RDD: branch range e42f9a8..4aaaaf2 assessed medium (executable change in `app/opengraph-image.tsx`); user
+  granted review; lens review-reliability → approved, acknowledged (lineage review-715c763bfb30adbe, authority burned).
+  Advisory (non-blocking): R3-phone-test-misnamed (`lib/content.test.ts:49`), R3-whatsapp-empty-phone
+  (`lib/whatsapp.ts:17`), R3-nested-interactive (`contact-info.tsx:22`, use `Button asChild`).
+
 ## Follow-ups (not in this feature)
+- Review advisories above.
 - Delete dead legacy components (`hero-section.tsx`, `projects-section.tsx`, `skills-section.tsx`) and the deprecated exports.
 - Clainor public URL/metrics, Directorio Solidario screenshots, updated CV + "Descargar CV", Cal.com booking.
 
 ## Next step
-Native review of the branch, then push + single PR (user decision).
+Push + single PR (user decision); optionally address review advisories first.
