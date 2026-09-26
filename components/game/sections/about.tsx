@@ -71,8 +71,8 @@ export function AboutSection({ nav }: { nav: BoardNav }) {
 
       <ShortcutCard
         code="02 ▲ 22"
-        title="¿Traes prisa? Toma el atajo"
-        subtitle="Escalera directa a Info de contacto"
+        title="¿Vienes de un meetup?"
+        subtitle="Escalera directa a Comunidad"
         tone="secondary"
         onClick={() => nav.shortcut("ladder", 0)}
       />

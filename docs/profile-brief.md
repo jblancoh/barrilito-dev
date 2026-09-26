@@ -64,8 +64,12 @@ Sin botón "Descargar CV" hasta que el CV esté actualizado.
 Co-líder del **AWS User Group Villahermosa** · co-líder de **Dev Night Talks** · host de **Hacktoberfest** (2.º año) · mentorías y talleres.
 > ¿Organizas un meetup o evento? Hablemos.
 
+Tiene su propia casilla en el tablero (casilla 22, key `info`), separada de Contacto.
+
 ## 10. Contacto
 Botón "Escríbeme por WhatsApp" (sin número visible, sin horarios) + formulario.
+
+Casilla 25 (key `contact`) agrupa WhatsApp + formulario + ubicación + redes en una sola parada.
 
 ## 11. Metadatos
 - **Título:** Jonathan Blanco (Barril) | AI Product Engineer & Tech Lead

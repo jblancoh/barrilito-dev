@@ -23,7 +23,7 @@ export const STOPS: readonly Stop[] = [
   { sq: 6, key: "skills", label: "Cómo trabajo", color: "secondary" },
   { sq: 12, key: "projects", label: "Casos", color: "accent" },
   { sq: 18, key: "services", label: "Oferta", color: "chart5" },
-  { sq: 22, key: "info", label: "Info de contacto", color: "primary" },
+  { sq: 22, key: "info", label: "Comunidad", color: "primary" },
   { sq: 25, key: "contact", label: "Contacto", color: "destructive" },
 ]
 
