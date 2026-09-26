@@ -204,3 +204,8 @@ Owner decides push/PR. Optional follow-ups: the T4 advisories above; WhatsApp br
 client name; consider whether "IA en tu producto"'s step-2 messageLabel ("Situación actual",
 chosen since the owner-approved heading "¿Dónde estás?" doesn't translate cleanly into a report
 noun) reads well enough in the sent email, or should be renamed.
+
+## T5 parent verification & review (2026-09-26, HEAD 9058bf5)
+- Browser (lite + board): all 6 services show the owner-approved step 2–4 questions; "Pedir cotización" first and default in both instances; switching service clears answers (0 checked, Next disabled); Charlas summary/WhatsApp/subject use per-service labels; no console/hydration errors. `pnpm test` 241/241.
+- Review: owner granted; reliability approved and acknowledged (lineage review-49eb894bd065c250, authority burned). Non-blocking advisories (follow-ups): R3-non-array-answers-masked (WARNING, lib/project-brief.test.ts:62), R3-service-switch-reset-untested (WARNING, project-brief.tsx:256-258), R3-default-mode-toggle-order-untested (SUGGESTION, contact-form.tsx:186).
+- Copy follow-ups spotted: step-5 placeholder "¿Qué problema quieres resolver?" and summary label "Tu proyecto" don't fit Charlas; email subject still "Brief: …".
