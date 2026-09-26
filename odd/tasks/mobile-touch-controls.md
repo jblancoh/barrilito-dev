@@ -22,6 +22,7 @@ Touch navigation uses a horizontal swipe (left = roll, right = back); vertical g
 ## Tasks
 - [x] T1 — Horizontal swipe classifier (`components/game/touch-gesture.ts` + tests) wired into touch handlers. Route: inline (small, understood; 1 new pure module + 1 handler edit).
 - [x] T2 — Compact HUD on narrow viewports + `inputHint(coarse)` helper with tests. Route: inline.
+- [x] T3 — Review follow-ups: ignore multi-finger gestures (pinch) and make the coarse-pointer subscription safe on Safari < 14 / missing matchMedia (`components/game/pointer-media.ts`). Route: inline. Accepted by the user ("corrige").
 
 ## Acceptance criteria
 - Vertical swipes never change the square; a left swipe (>= 60px, horizontal-dominant, not starting at a screen edge) rolls, a right swipe goes back.
@@ -44,12 +45,13 @@ Touch navigation uses a horizontal swipe (left = roll, right = back); vertical g
 - Desktop: original card and scroll hint unchanged.
 - Branch total vs base: 214 insertions, 45 deletions (includes this doc); single PR.
 
+- T3: RED observed (pinch test returned 'forward'; `./pointer-media` missing), GREEN 210/210, tsc clean, no lint warnings in components/game. Browser: synthetic two-finger pinch kept "Tu turno"; single-finger left swipe still "Avanzando…".
+
 ## Review
 - Native review lineage `review-b4dc5a1cc0f97715` (medium, lens reliability) on affcee4..adae9a1: approved and acknowledged.
 - Advisory follow-ups (non-blocking, not applied):
   - WARNING: horizontal swipes starting inside the panel now move the board; no panel content scrolls horizontally today (grep: no overflow-x/pre/table/carousel), so latent only.
-  - SUGGESTION: ignore multi-touch gestures (pinch) or match Touch.identifier.
-  - SUGGESTION: guard `matchMedia` / fall back to `addListener` for older Safari.
+  - Multi-touch (pinch) and `matchMedia` compat were re-rated WARNING in the second review (`review-9cb94939d04afbf4`, approved) and fixed in T3.
   - SUGGESTION: boundary tests at exactly 60px, 1.5x ratio, 24px edge.
 
 ## Next step

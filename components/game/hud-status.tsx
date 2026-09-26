@@ -5,6 +5,7 @@ import { Dices, Undo2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { STOPS } from "./board-config"
 import { STOP_BG_CLASS, STOP_RING_CLASS } from "./stop-colors"
+import { subscribeCoarsePointer } from "./pointer-media"
 import { inputHint } from "./touch-gesture"
 
 export interface HudStatusProps {
@@ -146,12 +147,6 @@ export function HudStatus({
 /** True on touch-first devices; false during SSR and until mounted. */
 function useCoarsePointer(): boolean {
   const [coarse, setCoarse] = useState(false)
-  useEffect(() => {
-    const query = window.matchMedia("(pointer: coarse)")
-    const update = () => setCoarse(query.matches)
-    update()
-    query.addEventListener("change", update)
-    return () => query.removeEventListener("change", update)
-  }, [])
+  useEffect(() => subscribeCoarsePointer(window, setCoarse), [])
   return coarse
 }

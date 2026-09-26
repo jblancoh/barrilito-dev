@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest"
 import { classifySwipe, inputHint } from "./touch-gesture"
 
-const swipe = (startX: number, startY: number, endX: number, endY: number) =>
-  classifySwipe({ startX, startY, endX, endY, viewportWidth: 390 })
+const swipe = (startX: number, startY: number, endX: number, endY: number, fingerCount = 1) =>
+  classifySwipe({ startX, startY, endX, endY, viewportWidth: 390, fingerCount })
 
 describe("classifySwipe", () => {
   it("ignores a vertical scroll gesture", () => {
@@ -24,6 +24,10 @@ describe("classifySwipe", () => {
 
   it("goes back on a right swipe", () => {
     expect(swipe(100, 400, 200, 390)).toBe("back")
+  })
+
+  it("ignores multi-finger gestures such as pinch-zoom", () => {
+    expect(swipe(300, 400, 150, 400, 2)).toBeNull()
   })
 
   it("ignores swipes that start at a side edge (system back gesture)", () => {

@@ -170,18 +170,27 @@ export function BoardGame({ onFallback }: BoardGameProps = {}) {
 
     let touchStartX = 0
     let touchStartY = 0
+    let touchFingers = 0
     // Only a gesture whose touchstart the board accepted may move it on touchend, so an
     // ignored start (dialog open) can't pair with a later end using stale coordinates.
     let touchTracked = false
     const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        // A second finger joined: remember it so the whole gesture is discarded.
+        touchFingers = Math.max(touchFingers, e.touches.length)
+        return
+      }
       const target = describeInputTarget(e.target)
       touchTracked = !shouldIgnoreBoardInput({ targetTag: target.tag, targetIsContentEditable: target.isContentEditable, targetInDialog: target.inDialog, modalOpen: isModalOpen() })
       if (!touchTracked) return
       touchStartX = e.touches[0].clientX
       touchStartY = e.touches[0].clientY
+      touchFingers = 1
     }
     const onTouchEnd = (e: TouchEvent) => {
       if (!touchTracked) return
+      // Wait until every finger is lifted before judging the gesture.
+      if (e.touches.length > 0) return
       touchTracked = false
       const target = describeInputTarget(e.target)
       if (shouldIgnoreBoardInput({ targetTag: target.tag, targetIsContentEditable: target.isContentEditable, targetInDialog: target.inDialog, modalOpen: isModalOpen() })) {
@@ -195,6 +204,7 @@ export function BoardGame({ onFallback }: BoardGameProps = {}) {
         endX: touch.clientX,
         endY: touch.clientY,
         viewportWidth: window.innerWidth,
+        fingerCount: touchFingers,
       })
       if (action === "forward") api.forward()
       else if (action === "back") api.back()

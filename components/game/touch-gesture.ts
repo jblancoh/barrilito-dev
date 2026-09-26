@@ -11,6 +11,8 @@ export interface SwipeInput {
   endX: number
   endY: number
   viewportWidth: number
+  /** Most fingers down at once during the gesture; pinch-zoom must never move the board. */
+  fingerCount: number
 }
 
 export type SwipeAction = "forward" | "back"
@@ -19,7 +21,8 @@ export type SwipeAction = "forward" | "back"
  * Maps a finished touch gesture to a board move. Only a clearly horizontal swipe counts
  * (left rolls the die, right goes back); vertical gestures stay free for scrolling.
  */
-export function classifySwipe({ startX, startY, endX, endY, viewportWidth }: SwipeInput): SwipeAction | null {
+export function classifySwipe({ startX, startY, endX, endY, viewportWidth, fingerCount }: SwipeInput): SwipeAction | null {
+  if (fingerCount > 1) return null
   if (startX < SWIPE_EDGE_GUARD || startX > viewportWidth - SWIPE_EDGE_GUARD) return null
   const dx = endX - startX
   const dy = endY - startY
