@@ -10,6 +10,7 @@ import { HudStatus } from "./hud-status"
 import { SectionPanel } from "./section-panel"
 import { renderSection } from "./section-registry"
 import { useBoardScene } from "./use-board-scene"
+import { classifySwipe } from "./touch-gesture"
 import { dispatchWheel, INITIAL_WHEEL_GATE } from "./wheel-gate"
 
 /** STOPS index matching `location.hash` at mount time, or 0 (the default stop) when absent/invalid. */
@@ -167,37 +168,46 @@ export function BoardGame({ onFallback }: BoardGameProps = {}) {
       }
     }
 
+    let touchStartX = 0
     let touchStartY = 0
-    let touchStartTarget: EventTarget | null = null
+    let touchFingers = 0
     // Only a gesture whose touchstart the board accepted may move it on touchend, so an
     // ignored start (dialog open) can't pair with a later end using stale coordinates.
     let touchTracked = false
     const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        // A second finger joined: remember it so the whole gesture is discarded.
+        touchFingers = Math.max(touchFingers, e.touches.length)
+        return
+      }
       const target = describeInputTarget(e.target)
       touchTracked = !shouldIgnoreBoardInput({ targetTag: target.tag, targetIsContentEditable: target.isContentEditable, targetInDialog: target.inDialog, modalOpen: isModalOpen() })
       if (!touchTracked) return
+      touchStartX = e.touches[0].clientX
       touchStartY = e.touches[0].clientY
-      touchStartTarget = e.target
+      touchFingers = 1
     }
     const onTouchEnd = (e: TouchEvent) => {
       if (!touchTracked) return
+      // Wait until every finger is lifted before judging the gesture.
+      if (e.touches.length > 0) return
       touchTracked = false
       const target = describeInputTarget(e.target)
       if (shouldIgnoreBoardInput({ targetTag: target.tag, targetIsContentEditable: target.isContentEditable, targetInDialog: target.inDialog, modalOpen: isModalOpen() })) {
         return
       }
-      const dy = touchStartY - e.changedTouches[0].clientY
-      const panel = panelRef.current
-      if (
-        panel &&
-        touchStartTarget instanceof Node &&
-        panel.contains(touchStartTarget) &&
-        panel.scrollHeight > panel.clientHeight + 2
-      ) {
-        return
-      }
-      if (dy > 50) api.forward()
-      else if (dy < -50) api.back()
+      // Horizontal swipes move the board; vertical gestures are left to scroll the panel.
+      const touch = e.changedTouches[0]
+      const action = classifySwipe({
+        startX: touchStartX,
+        startY: touchStartY,
+        endX: touch.clientX,
+        endY: touch.clientY,
+        viewportWidth: window.innerWidth,
+        fingerCount: touchFingers,
+      })
+      if (action === "forward") api.forward()
+      else if (action === "back") api.back()
     }
 
     window.addEventListener("wheel", onWheel, { passive: false })
@@ -233,6 +243,7 @@ export function BoardGame({ onFallback }: BoardGameProps = {}) {
         canForward={Boolean(nextStop)}
         canBack={state.stop > 0}
         showRail={layout.rail}
+        compact={layout.narrow}
         currentStopIndex={state.stop}
         onForward={api.forward}
         onBack={api.back}
