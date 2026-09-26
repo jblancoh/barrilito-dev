@@ -14,9 +14,9 @@ import { useRenderMode } from "@/components/game/render-mode-context"
 
 const NAV_LINKS: { key: StopKey; label: string; hoverClass: string }[] = [
   { key: "about", label: "Sobre mí", hoverClass: "hover:text-primary" },
-  { key: "skills", label: "Habilidades", hoverClass: "hover:text-secondary" },
-  { key: "projects", label: "Proyectos", hoverClass: "hover:text-accent" },
-  { key: "services", label: "Servicios", hoverClass: "hover:text-chart5" },
+  { key: "skills", label: "Cómo trabajo", hoverClass: "hover:text-secondary" },
+  { key: "projects", label: "Casos", hoverClass: "hover:text-accent" },
+  { key: "services", label: "Oferta", hoverClass: "hover:text-chart5" },
   { key: "contact", label: "Contacto", hoverClass: "hover:text-destructive" },
 ]
 

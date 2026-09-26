@@ -20,9 +20,9 @@ export interface Stop {
 /** The six section squares, in board order. Rolls between them are predefined (see PREDEFINED_ROLLS). */
 export const STOPS: readonly Stop[] = [
   { sq: 1, key: "about", label: "Sobre mí", color: "primary" },
-  { sq: 6, key: "skills", label: "Habilidades", color: "secondary" },
-  { sq: 12, key: "projects", label: "Proyectos", color: "accent" },
-  { sq: 18, key: "services", label: "Servicios", color: "chart5" },
+  { sq: 6, key: "skills", label: "Cómo trabajo", color: "secondary" },
+  { sq: 12, key: "projects", label: "Casos", color: "accent" },
+  { sq: 18, key: "services", label: "Oferta", color: "chart5" },
   { sq: 22, key: "info", label: "Info de contacto", color: "primary" },
   { sq: 25, key: "contact", label: "Contacto", color: "destructive" },
 ]
