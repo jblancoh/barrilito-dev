@@ -135,3 +135,13 @@ Work-unit commits on the feature branch; push/PR are the user's decision.
 ## Next step
 All four tasks (T1–T4) done. Awaiting parent's browser re-verification of the board-mode brief
 deep link (desktop + mobile width); push/PR remain the user's decision.
+
+## Parent browser verification (2026-09-26, HEAD e76006e)
+- Lite: wizard steps 1→6, Next disabled until pick, Back keeps answers, budget brackets exact, summary OK; email path reaches Server Action (local: "missing Resend configuration" → expected error state); WhatsApp link carries encoded brief; CTA opens brief, URL clean; toggle back to "Mensaje libre" OK; 375px width no horizontal overflow.
+- Board: CTA from #services walks to #contact with visible instance in "Armar brief"; direct `/?brief=1#contact` opens brief and strips the flag.
+- Found and fixed via T4: SEO sr-only instance consumed the one-shot intent before the board instance mounted.
+- Review: assess (base 0841ecf, committed-only) → medium, review_due slice_budget_reached (1044 lines); consent relayed to owner.
+- Review outcome: owner granted; reliability lens approved, acknowledged (lineage review-c0d5e7ee4a8f7380, authority burned). Non-blocking advisories (follow-ups, not applied): R3-deeplink-effect-untested (WARNING, contact-form.tsx:189-194), R3-tautological-shared-store-test (WARNING, contact-mode-store.test.ts:53-60), R3-mode-toggle-discards-input (SUGGESTION, contact-form.tsx:248-255), R3-raw-fields-submitted (SUGGESTION, project-brief.tsx:195-198).
+
+## Next step
+Owner decides push/PR. Optional follow-ups: the advisories above; WhatsApp brief greeting with client name.
