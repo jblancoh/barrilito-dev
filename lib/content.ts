@@ -191,6 +191,22 @@ export const offer: Offer = {
     "Trabajo con pocos proyectos a la vez para darles atención real. Modelos flexibles: por entregables, mensual o con participación si somos socios.",
 }
 
+export interface BriefOptions {
+  /** From `offer.services` titles, plus a trailing "Otro" catch-all. */
+  services: string[]
+  stages: string[]
+  timelines: string[]
+  budgets: string[]
+}
+
+/** Options for the guided project brief wizard (see lib/project-brief.ts and components/game/sections/project-brief.tsx). */
+export const briefOptions: BriefOptions = {
+  services: [...offer.services.map((service) => service.title), "Otro"],
+  stages: ["Solo es una idea", "Tengo diseño o prototipo", "Ya tengo un producto en uso"],
+  timelines: ["Lo antes posible", "En 1 a 3 meses", "Sin prisa"],
+  budgets: ["Menos de $20k", "$20k–$60k", "$60k–$150k", "Más de $150k", "Aún no lo sé"],
+}
+
 export interface Community {
   items: string[]
   invite: string
