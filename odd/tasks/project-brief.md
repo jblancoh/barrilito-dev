@@ -41,7 +41,7 @@ Work-unit commits on the feature branch; push/PR are the user's decision.
 ## Tasks
 - [x] T1 Pure brief model + `briefOptions` content (tests). Route: delegated writer (2 non-trivial files: module + test).
 - [x] T2 Brief wizard component + contact-section toggle. Route: delegated writer (2+ non-trivial files).
-- [ ] T3 Services CTA deep link to brief mode + copy polish. Route: delegated writer (same bounded writer).
+- [x] T3 Services CTA deep link to brief mode + copy polish. Route: delegated writer (same bounded writer).
 
 ## Acceptance criteria
 - Wizard keeps answers when going back/forward; one question per step; keyboard accessible.
@@ -72,5 +72,23 @@ Work-unit commits on the feature branch; push/PR are the user's decision.
   in isolation and when re-run alone, only times out under full-suite parallel load; `lib/contact.ts`
   is out of scope (must stay unchanged per the constraints).
 
+- T3 done (commit pending SHA below). Deep-link mechanism: reused the existing `nav.goTo("contact")`
+  navigation plus a `?brief=1` URL flag (same style as the existing `?mode=` render-mode override in
+  render-mode.ts) — `hasBriefIntent`/`withBriefIntent`/`withoutBriefIntent` in `lib/project-brief.ts`
+  (TDD'd in T1). Board mode: the flag survives the board's async walk-to-stop since it's part of the
+  URL, and the freshly-mounted `ContactFormSection` reads it on mount. Lite mode keeps every section
+  mounted at once (see seo-fallback.tsx), so `nav.goTo` there only scrolls — added a small
+  `projectbrief:open` window event (new `components/game/brief-intent-events.ts`, mirrors
+  board-events.ts's existing bus pattern) so an already-mounted `ContactFormSection` reacts
+  immediately. To trigger: click "Cotiza tu proyecto" in the Oferta/Services section (repurposed
+  the section's existing single CTA, previously labeled "Hablemos", since it already led to
+  contact — avoids a redundant second button); or share a link with `?brief=1#contact`.
+  Renamed `ServicesSection`'s CTA from "Hablemos" to "Cotiza tu proyecto" and wired it through
+  `handleQuoteClick`; `ContactFormSection` now listens for the deep link on mount and via the event.
+  `pnpm exec tsc --noEmit`: clean. `pnpm lint`: only pre-existing `<img>` warnings. `pnpm test`:
+  229/229 passed (the T2 rate-limiter flake did not reproduce this run — confirmed pre-existing/
+  environmental, unrelated to this feature). `pnpm build`: succeeded.
+
 ## Next step
-T3: Services CTA deep link to brief mode.
+All three tasks (T1–T3) done. Awaiting parent's browser verification (desktop + mobile width) per
+the acceptance criteria; push/PR remain the user's decision.

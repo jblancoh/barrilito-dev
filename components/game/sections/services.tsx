@@ -2,6 +2,8 @@
 
 import { Button } from "@/components/ui/button"
 import { offer } from "@/lib/content"
+import { withBriefIntent } from "@/lib/project-brief"
+import { dispatchOpenBrief } from "../brief-intent-events"
 import type { BoardNav } from "../board-nav"
 import { STOP_BORDER_T_CLASS } from "../stop-colors"
 import type { StopColor } from "../board-config"
@@ -9,6 +11,18 @@ import type { StopColor } from "../board-config"
 const SERVICE_COLORS: StopColor[] = ["primary", "secondary", "accent", "chart5", "destructive"]
 
 export function ServicesSection({ nav }: { nav: BoardNav }) {
+  // Opens the contact section already in "Armar brief" mode: dispatchOpenBrief
+  // reaches an already-mounted instance (lite mode); the `?brief=1` flag
+  // reaches a freshly-mounted one (the board, once it arrives at "contact") —
+  // see components/game/brief-intent-events.ts and lib/project-brief.ts.
+  const handleQuoteClick = () => {
+    dispatchOpenBrief()
+    if (typeof window !== "undefined") {
+      window.history.replaceState(window.history.state, "", withBriefIntent(window.location.href))
+    }
+    nav.goTo("contact")
+  }
+
   return (
     <section className="flex flex-col gap-6">
       <div>
@@ -35,9 +49,9 @@ export function ServicesSection({ nav }: { nav: BoardNav }) {
       <Button
         size="lg"
         className="self-start bg-gradient-to-r from-primary to-secondary text-primary-foreground hover:from-primary/90 hover:to-secondary/90"
-        onClick={() => nav.goTo("contact")}
+        onClick={handleQuoteClick}
       >
-        Hablemos
+        Cotiza tu proyecto
       </Button>
     </section>
   )

@@ -16,7 +16,9 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { initialContactFormState, type ContactFormState } from "@/lib/contact-submission"
 import { contactInfo, socialLinks } from "@/lib/content"
+import { hasBriefIntent, withoutBriefIntent } from "@/lib/project-brief"
 import { buildWhatsAppUrl } from "@/lib/whatsapp"
+import { onOpenBrief } from "../brief-intent-events"
 import type { BoardNav } from "../board-nav"
 import { ShortcutCard } from "../shortcut-card"
 import { ProjectBriefWizard } from "./project-brief"
@@ -176,6 +178,22 @@ export function ContactFormSection({ nav }: { nav: BoardNav }) {
   const [formInstanceKey, setFormInstanceKey] = useState(0)
   const [mode, setMode] = useState<ContactMode>("message")
   const whatsappUrl = buildWhatsAppUrl(contactInfo.phone, contactInfo.whatsappMessage)
+
+  // Deep link from the Services section's "Cotiza tu proyecto" CTA (see
+  // components/game/sections/services.tsx): a `?brief=1` in the URL means
+  // this instance just mounted there (the board), while the `projectbrief:open`
+  // event reaches an instance that was already mounted (lite mode).
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const openBriefMode = () => {
+      setMode("brief")
+      window.history.replaceState(window.history.state, "", withoutBriefIntent(window.location.href))
+    }
+
+    if (hasBriefIntent(window.location.search)) openBriefMode()
+    return onOpenBrief(openBriefMode)
+  }, [])
 
   return (
     <section className="flex flex-col gap-6">
