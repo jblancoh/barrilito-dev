@@ -60,6 +60,7 @@ Work-unit commits on the feature branch; push/PR are the owner's decision.
   Checks: `tsc` OK, lint 0 errors, `pnpm build` OK (`/robots.txt`, `/sitemap.xml` static); dev server:
   robots/sitemap/favicon 200, canonical + theme-color + robots/googlebot meta present, JSON-LD parses;
   built `/maintenance` has `noindex, nofollow`; no console errors.
+  Commit 9b6d9d7. RDD: slice 9674bd2..9b6d9d7 medium, under_budget (313 lines) → no review due; stays pending.
 
 ## Acceptance criteria
 - `pnpm test`, `pnpm lint`, `tsc --noEmit`, `pnpm build` pass on Next 16.
@@ -68,4 +69,8 @@ Work-unit commits on the feature branch; push/PR are the owner's decision.
 - Analytics and Speed Insights scripts load (debug mode in dev) with no console errors.
 
 ## Progress
-- T1, T2, T3 done. Next: native review of T2+T3 slice, then owner decides push/PRs (PR 1 = 9674bd2, PR 2 = T2+T3).
+- T1, T2, T3 done. Next: owner decides push/PRs (PR 1 = up to 9674bd2, PR 2 = 9035582..9b6d9d7).
+- Owner actions after deploy: enable Web Analytics + Speed Insights in the Vercel dashboard; set
+  `NEXT_PUBLIC_SITE_URL=https://barrilito.dev` if the custom domain differs from the Vercel production
+  domain; submit the sitemap in Google Search Console.
+- Follow-ups: refactor the 5 React Compiler lint warnings and restore those rules to `error`; pin Node engine (>= 20.9).
