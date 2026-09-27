@@ -49,7 +49,11 @@ Work-unit commits on the feature branch; push/PR are the owner's decision.
   Checks: `pnpm test` 254/254, `pnpm lint` 0 errors (12 warnings), `tsc --noEmit` OK, `pnpm build` OK;
   browser: 3D board renders, no console errors; contact form submit → server action ran, error state shown, fields kept.
   Pre-existing unrelated: `@types/node` 20.17 below vitest 5 peer range.
-- [ ] T2 Vercel Web Analytics + Speed Insights. Route: inline (layout + proxy matcher).
+  Commit 9674bd2. RDD: medium, granted → lineage review-ce1c0cdc89fa7f58 approved + acknowledged (burned).
+  Advisory (SUGGESTION, not applied): async client key untested; Node engine unpinned; compiler rules downgraded; no automated useActionState assertion.
+- [x] T2 Vercel Web Analytics + Speed Insights. Route: inline (layout + proxy matcher).
+  Evidence: @vercel/analytics 2.0.1, @vercel/speed-insights 2.0.0 at end of `<body>`; proxy matcher skips `_vercel`.
+  Checks: `tsc` OK, lint 0 errors; browser dev: both debug scripts load, pageview logged to `/_vercel/insights/view`, no errors.
 - [ ] T3 SEO: robots, sitemap, JSON-LD, canonical/viewport metadata, favicon, maintenance noindex. Route: inline (one new pure module + test, small wiring files).
 
 ## Acceptance criteria
@@ -59,4 +63,4 @@ Work-unit commits on the feature branch; push/PR are the owner's decision.
 - Analytics and Speed Insights scripts load (debug mode in dev) with no console errors.
 
 ## Progress
-- T1 done. Next: T2.
+- T1, T2 done. Next: T3.

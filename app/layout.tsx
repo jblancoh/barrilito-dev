@@ -2,6 +2,8 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import localFont from "next/font/local"
+import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import "./globals.css"
 import { Navbar } from "@/components/navbar"
 import { RenderModeProvider } from "@/components/game/render-mode-context"
@@ -52,6 +54,8 @@ export default function RootLayout({
             <SiteChrome>{children}</SiteChrome>
           </RenderModeProvider>
         </ThemeProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
