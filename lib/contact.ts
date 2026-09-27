@@ -207,3 +207,17 @@ export function formatContactEmail(data: ContactInput): { subject: string; text:
   )
   return { subject, text }
 }
+
+/**
+ * Rate-limit key for a request: the first `x-forwarded-for` entry (the
+ * original client on Vercel), else `x-real-ip`, else "unknown".
+ */
+export function clientKeyFromHeaders(headerList: Pick<Headers, "get">): string {
+  const forwardedFor = headerList.get("x-forwarded-for")?.split(",")[0]?.trim()
+  if (forwardedFor) return forwardedFor
+
+  const realIp = headerList.get("x-real-ip")?.trim()
+  if (realIp) return realIp
+
+  return "unknown"
+}

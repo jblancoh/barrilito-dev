@@ -32,15 +32,26 @@ export function buildSitemap(siteUrl: URL): MetadataRoute.Sitemap {
   return [{ url: absolute("/", siteUrl), changeFrequency: "monthly", priority: 1 }]
 }
 
-/** "Villahermosa, Tabasco, México" → locality + region; the site is Mexico-based. */
-function postalAddress(location: string) {
-  const [addressLocality, addressRegion] = location.split(",").map((part) => part.trim())
-  return { "@type": "PostalAddress", addressLocality, addressRegion, addressCountry: "MX" }
+/**
+ * "Villahermosa, Tabasco, México" → locality + region; the site is
+ * Mexico-based. Blank parts are dropped, and a blank location yields no
+ * address at all rather than an empty `PostalAddress`.
+ */
+export function postalAddress(location: string) {
+  const [locality, region] = location.split(",").map((part) => part.trim())
+  if (!locality && !region) return undefined
+  return {
+    "@type": "PostalAddress",
+    ...(locality ? { addressLocality: locality } : {}),
+    ...(region ? { addressRegion: region } : {}),
+    addressCountry: "MX",
+  }
 }
 
 export function buildJsonLd(siteUrl: URL): Record<string, unknown> {
   const home = absolute("/", siteUrl)
   const personId = `${home}#person`
+  const address = postalAddress(contactInfo.location)
 
   return {
     "@context": "https://schema.org",
@@ -55,7 +66,7 @@ export function buildJsonLd(siteUrl: URL): Record<string, unknown> {
         url: home,
         image: absolute(LOGO_PATH, siteUrl),
         sameAs: Object.values(socialLinks),
-        address: postalAddress(contactInfo.location),
+        ...(address ? { address } : {}),
       },
       {
         "@type": "WebSite",
