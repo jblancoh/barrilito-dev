@@ -56,4 +56,10 @@ Not applied: React Compiler lint warnings refactor (separate feature, touches th
 - `pnpm test`, `pnpm lint`, `tsc --noEmit`, `pnpm build` pass.
 
 ## Progress
-- T1–T4 done. Next: owner decides push/PR.
+- T1–T4 done. Branch review (owner granted): lineage review-0bacd0a25dd03be6 approved + acknowledged.
+  Accepted WARNING R3-001: new `proxy.test.ts` drives `proxy()` with a `NextRequest` (503 + Retry-After +
+  rewrite target in maintenance, pass-through and 307 home outside it); `proxy.ts` imports `./lib/maintenance`
+  relatively so vitest resolves it. Suite 282/282, tsc, lint, build OK.
+  Not applied SUGGESTION R3-002: no end-to-end test that `buildJsonLd` omits `address` for a blank location
+  (would need to mock `lib/content`; helper itself is covered).
+- Next: owner decides push/PR.

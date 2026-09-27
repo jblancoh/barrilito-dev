@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { resolveMaintenanceAction } from '@/lib/maintenance'
+import { resolveMaintenanceAction } from './lib/maintenance'
 
 export function proxy(request: NextRequest) {
   const action = resolveMaintenanceAction(
