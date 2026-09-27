@@ -70,6 +70,10 @@ Work-unit commits on the feature branch; push/PR are the owner's decision.
 
 ## Progress
 - T1, T2, T3 done. Next: owner decides push/PRs (PR 1 = up to 9674bd2, PR 2 = 9035582..9b6d9d7).
+- Full-branch review (owner granted): lineage review-c306cba04a6b3b6f approved + acknowledged.
+  Accepted WARNING R3-robots-disallow-hides-noindex: robots.txt no longer disallows /maintenance
+  (a disallow would hide its noindex from crawlers). SUGGESTIONS not applied: async client key
+  untested; maintenance inherits canonical "/" (harmless under noindex).
 - Owner actions after deploy: enable Web Analytics + Speed Insights in the Vercel dashboard; set
   `NEXT_PUBLIC_SITE_URL=https://barrilito.dev` if the custom domain differs from the Vercel production
   domain; submit the sitemap in Google Search Console.

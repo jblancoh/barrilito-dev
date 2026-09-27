@@ -16,9 +16,13 @@ function absolute(path: string, siteUrl: URL): string {
   return new URL(path, siteUrl.origin).toString()
 }
 
+/**
+ * No `disallow` for /maintenance: its `noindex` meta keeps it out of the
+ * index, and crawlers can only read that meta if they may fetch the page.
+ */
 export function buildRobots(siteUrl: URL): MetadataRoute.Robots {
   return {
-    rules: { userAgent: "*", allow: "/", disallow: "/maintenance" },
+    rules: { userAgent: "*", allow: "/" },
     sitemap: absolute("/sitemap.xml", siteUrl),
   }
 }

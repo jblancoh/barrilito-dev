@@ -15,8 +15,10 @@ function graphNode(type: string): Node {
 }
 
 describe("buildRobots", () => {
-  it("allows crawling the site but keeps /maintenance out of the index", () => {
-    expect(buildRobots(siteUrl).rules).toEqual({ userAgent: "*", allow: "/", disallow: "/maintenance" })
+  // /maintenance stays crawlable on purpose: its `noindex` meta only works if
+  // crawlers can fetch the page, which a robots.txt disallow would prevent.
+  it("allows crawling the whole site", () => {
+    expect(buildRobots(siteUrl).rules).toEqual({ userAgent: "*", allow: "/" })
   })
 
   it("points crawlers to the absolute sitemap URL", () => {
