@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   if (process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true') {
     if (request.nextUrl.pathname === '/maintenance') {
       return NextResponse.next()
@@ -17,5 +17,5 @@ export function middleware(request: NextRequest) {
 
 // See "Matching Paths" below to learn more
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|assets).*)',]
+  matcher: ['/((?!api|_next/static|_next/image|_vercel|favicon.ico|robots.txt|sitemap.xml|assets).*)',]
 }

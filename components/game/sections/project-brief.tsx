@@ -1,10 +1,7 @@
-/// <reference types="react-dom/canary" />
 "use client"
 
-// See contact-form.tsx for why this reference comment exists: it only loads
-// ambient `useFormState`/`useFormStatus` types and is compiled away.
-import { useEffect, useId, useState } from "react"
-import { useFormState, useFormStatus } from "react-dom"
+import { useActionState, useEffect, useId, useState } from "react"
+import { useFormStatus } from "react-dom"
 import { MessageCircle } from "lucide-react"
 import { sendContactMessage } from "@/app/actions/contact"
 import { Button } from "@/components/ui/button"
@@ -131,7 +128,7 @@ function BriefSubmitButton() {
 
 /** Step 6: read-back summary plus the two send actions (email via the existing pipeline, or WhatsApp). */
 function BriefSummaryStep({ brief, onSentAnother }: { brief: ProjectBrief; onSentAnother: () => void }) {
-  const [state, formAction] = useFormState<ContactFormState, FormData>(sendContactMessage, initialContactFormState)
+  const [state, formAction] = useActionState<ContactFormState, FormData>(sendContactMessage, initialContactFormState)
   // Rendered as "" on both server and first client render, then filled in by
   // this effect, so the hidden input never causes a hydration mismatch (see
   // contact-form.tsx's identical pattern).

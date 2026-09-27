@@ -1,7 +1,9 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import localFont from "next/font/local"
+import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import "./globals.css"
 import { Navbar } from "@/components/navbar"
 import { RenderModeProvider } from "@/components/game/render-mode-context"
@@ -22,6 +24,15 @@ export const metadata: Metadata = {
   metadataBase: resolveSiteUrl(process.env),
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
+  applicationName: "BarrilitoDev",
+  authors: [{ name: "Jonathan Blanco", url: "/" }],
+  creator: "Jonathan Blanco",
+  alternates: { canonical: "/" },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
+  },
   openGraph: {
     type: "website",
     locale: "es_MX",
@@ -35,6 +46,13 @@ export const metadata: Metadata = {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
   },
+}
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#121212" },
+  ],
 }
 
 export default function RootLayout({
@@ -52,6 +70,8 @@ export default function RootLayout({
             <SiteChrome>{children}</SiteChrome>
           </RenderModeProvider>
         </ThemeProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
