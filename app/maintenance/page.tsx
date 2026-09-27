@@ -1,6 +1,11 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Clock, Wrench} from "lucide-react"
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 
 export default function MaintenancePage() {
   return (

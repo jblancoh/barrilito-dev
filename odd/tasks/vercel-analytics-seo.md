@@ -54,7 +54,12 @@ Work-unit commits on the feature branch; push/PR are the owner's decision.
 - [x] T2 Vercel Web Analytics + Speed Insights. Route: inline (layout + proxy matcher).
   Evidence: @vercel/analytics 2.0.1, @vercel/speed-insights 2.0.0 at end of `<body>`; proxy matcher skips `_vercel`.
   Checks: `tsc` OK, lint 0 errors; browser dev: both debug scripts load, pageview logged to `/_vercel/insights/view`, no errors.
-- [ ] T3 SEO: robots, sitemap, JSON-LD, canonical/viewport metadata, favicon, maintenance noindex. Route: inline (one new pure module + test, small wiring files).
+  Commit 9035582. RDD: medium, under_budget (87 lines) → pending in slice with T3.
+- [x] T3 SEO: robots, sitemap, JSON-LD, canonical/viewport metadata, favicon, maintenance noindex. Route: inline (one new pure module + test, small wiring files).
+  TDD: RED `lib/seo.test.ts` (module missing) → GREEN 11/11; full suite 265/265.
+  Checks: `tsc` OK, lint 0 errors, `pnpm build` OK (`/robots.txt`, `/sitemap.xml` static); dev server:
+  robots/sitemap/favicon 200, canonical + theme-color + robots/googlebot meta present, JSON-LD parses;
+  built `/maintenance` has `noindex, nofollow`; no console errors.
 
 ## Acceptance criteria
 - `pnpm test`, `pnpm lint`, `tsc --noEmit`, `pnpm build` pass on Next 16.
@@ -63,4 +68,4 @@ Work-unit commits on the feature branch; push/PR are the owner's decision.
 - Analytics and Speed Insights scripts load (debug mode in dev) with no console errors.
 
 ## Progress
-- T1, T2 done. Next: T3.
+- T1, T2, T3 done. Next: native review of T2+T3 slice, then owner decides push/PRs (PR 1 = 9674bd2, PR 2 = T2+T3).

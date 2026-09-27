@@ -17,5 +17,5 @@ export function proxy(request: NextRequest) {
 
 // See "Matching Paths" below to learn more
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|_vercel|favicon.ico|assets).*)',]
+  matcher: ['/((?!api|_next/static|_next/image|_vercel|favicon.ico|robots.txt|sitemap.xml|assets).*)',]
 }
