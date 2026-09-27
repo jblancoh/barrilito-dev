@@ -1,18 +1,24 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { resolveMaintenanceAction } from '@/lib/maintenance'
 
 export function proxy(request: NextRequest) {
-  if (process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true') {
-    if (request.nextUrl.pathname === '/maintenance') {
+  const action = resolveMaintenanceAction(
+    request.nextUrl.pathname,
+    process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true',
+  )
+
+  switch (action.type) {
+    case 'rewrite':
+      return NextResponse.rewrite(new URL(action.destination, request.url), {
+        status: action.status,
+        headers: { 'Retry-After': String(action.retryAfterSeconds) },
+      })
+    case 'redirect':
+      return NextResponse.redirect(new URL(action.destination, request.url))
+    case 'next':
       return NextResponse.next()
-    } 
-    return NextResponse.redirect(new URL('/maintenance', request.url))
-  } else {
-    if (request.nextUrl.pathname === '/maintenance') {
-      return NextResponse.redirect(new URL('/', request.url))
-    }
   }
-  return NextResponse.next()
 }
 
 // See "Matching Paths" below to learn more

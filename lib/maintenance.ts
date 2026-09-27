@@ -1,24 +1,35 @@
 /**
- * Configuración del modo de mantenimiento
- * 
- * Este archivo permite controlar si el sitio está en modo de mantenimiento
- * y qué rutas están exentas de la redirección.
+ * Maintenance-mode routing, decided by `proxy.ts` from
+ * `NEXT_PUBLIC_MAINTENANCE_MODE`. Kept pure so the decision is testable
+ * without a request.
+ *
+ * During maintenance every page answers with the maintenance content on its
+ * own URL as `503 Service Unavailable` + `Retry-After`: Google treats that as
+ * temporary downtime and keeps the page indexed, whereas redirecting to a
+ * `noindex` page for long could drop the home page from the index.
  */
 
-/**
- * Indica si el modo de mantenimiento está activo
- * Cambia a true para activar el modo de mantenimiento
- */
-export const MAINTENANCE_MODE = true
+export const MAINTENANCE_PATH = "/maintenance"
 
-/**
- * Rutas que están exentas del modo de mantenimiento
- * Estas rutas seguirán siendo accesibles incluso cuando el modo de mantenimiento esté activo
- */
-export const EXEMPT_PATHS = [
-  "/maintenance",
-  // Agrega aquí cualquier otra ruta que deba ser accesible durante el mantenimiento
-  // Por ejemplo, rutas de administración o API endpoints específicos
-  // "/admin",
-  // "/api/status",
-] 
+/** How long crawlers should wait before retrying (one hour). */
+export const MAINTENANCE_RETRY_AFTER_SECONDS = 3600
+
+export type MaintenanceAction =
+  | { type: "next" }
+  | { type: "redirect"; destination: string }
+  | { type: "rewrite"; destination: string; status: 503; retryAfterSeconds: number }
+
+export function resolveMaintenanceAction(pathname: string, maintenanceEnabled: boolean): MaintenanceAction {
+  if (maintenanceEnabled) {
+    if (pathname === MAINTENANCE_PATH) return { type: "next" }
+    return {
+      type: "rewrite",
+      destination: MAINTENANCE_PATH,
+      status: 503,
+      retryAfterSeconds: MAINTENANCE_RETRY_AFTER_SECONDS,
+    }
+  }
+
+  if (pathname === MAINTENANCE_PATH) return { type: "redirect", destination: "/" }
+  return { type: "next" }
+}
