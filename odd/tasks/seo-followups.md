@@ -20,7 +20,7 @@ Apply the relevant advisory findings from the PR #22 native reviews
   (+ test); `proxy.ts` rewrites to `/maintenance` with `503` + `Retry-After` during maintenance.
 - T2 `lib/seo.ts`: `postalAddress` omits missing parts (+ test).
 - T3 `lib/contact.ts`: pure `clientKeyFromHeaders(headers)` (+ test); `app/actions/contact.ts` uses it.
-- T4 `package.json`: `engines.node >= 20.9.0`.
+- T4 `package.json`: `engines.node` pinned to the supported LTS lines.
 
 ## Constraints
 - Next.js 16 proxy (Node runtime), pnpm, vitest. Maintenance switch stays `NEXT_PUBLIC_MAINTENANCE_MODE`.
@@ -44,7 +44,9 @@ feature branch; push/PR are the owner's decision (owner asked to continue after 
 - [x] T3 Testable client-key extraction. Route: inline.
   TDD: RED 4 failing (`clientKeyFromHeaders` missing) → GREEN; suite 278/278; tsc, lint OK. Action now calls
   `clientKeyFromHeaders(await headers())`; `x-real-ip` is also trimmed.
-- [ ] T4 Pin Node engine. Route: inline (one line).
+- [x] T4 Pin Node engine. Route: inline (one line).
+  `engines.node: "22.x || 24.x"`: both LTS lines Next 16 supports (>= 20.9) and Vercel runs; Node 20 is deprecated
+  on Vercel from 2026-10-01, and an open `>=` range would silently jump to future majors. Checks: frozen install, build OK.
 
 Not applied: React Compiler lint warnings refactor (separate feature, touches the 3D board).
 
@@ -54,4 +56,4 @@ Not applied: React Compiler lint warnings refactor (separate feature, touches th
 - `pnpm test`, `pnpm lint`, `tsc --noEmit`, `pnpm build` pass.
 
 ## Progress
-- T1, T2, T3 done. Next: T4.
+- T1–T4 done. Next: owner decides push/PR.
