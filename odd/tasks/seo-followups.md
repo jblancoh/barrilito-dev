@@ -39,7 +39,8 @@ feature branch; push/PR are the owner's decision (owner asked to continue after 
   TDD: RED 6 failing (`resolveMaintenanceAction` missing) → GREEN 6/6; suite 271/271; tsc, lint OK.
   Prod build with `NEXT_PUBLIC_MAINTENANCE_MODE=true` + `next start`: `GET /` → 503, `retry-after: 3600`,
   maintenance content on `/`; `/robots.txt` 200. Normal build: `/` 200, `/maintenance` 307 → `/`.
-- [ ] T2 Guard postal address parsing. Route: inline.
+- [x] T2 Guard postal address parsing. Route: inline.
+  TDD: RED 3 failing (`postalAddress` not exported) → GREEN 14/14; tsc OK. Blank parts dropped; blank location → no `address`.
 - [ ] T3 Testable client-key extraction. Route: inline.
 - [ ] T4 Pin Node engine. Route: inline (one line).
 
@@ -51,4 +52,4 @@ Not applied: React Compiler lint warnings refactor (separate feature, touches th
 - `pnpm test`, `pnpm lint`, `tsc --noEmit`, `pnpm build` pass.
 
 ## Progress
-- T1 done. Next: T2.
+- T1, T2 done. Next: T3.

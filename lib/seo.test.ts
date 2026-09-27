@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { profile, socialLinks } from "./content"
-import { buildJsonLd, buildRobots, buildSitemap, serializeJsonLd } from "./seo"
+import { buildJsonLd, buildRobots, buildSitemap, postalAddress, serializeJsonLd } from "./seo"
 import { SITE_DESCRIPTION } from "./site-metadata"
 
 const siteUrl = new URL("https://barrilito.dev")
@@ -81,6 +81,28 @@ describe("buildJsonLd", () => {
       inLanguage: "es-MX",
       author: { "@id": "https://barrilito.dev/#person" },
     })
+  })
+})
+
+describe("postalAddress", () => {
+  it("keeps only the locality when the location has no region", () => {
+    expect(postalAddress("Villahermosa")).toEqual({
+      "@type": "PostalAddress",
+      addressLocality: "Villahermosa",
+      addressCountry: "MX",
+    })
+  })
+
+  it("ignores blank parts", () => {
+    expect(postalAddress(" , Tabasco")).toEqual({
+      "@type": "PostalAddress",
+      addressRegion: "Tabasco",
+      addressCountry: "MX",
+    })
+  })
+
+  it("returns undefined for a blank location, so the Person has no address", () => {
+    expect(postalAddress("  ")).toBeUndefined()
   })
 })
 
