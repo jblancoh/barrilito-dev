@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { createRateLimiter, formatContactEmail, isLikelySpam, validateContact } from "./contact"
+import { clientKeyFromHeaders, createRateLimiter, formatContactEmail, isLikelySpam, validateContact } from "./contact"
 
 describe("validateContact", () => {
   const valid = {
@@ -257,5 +257,25 @@ describe("formatContactEmail", () => {
     })
     expect(text).not.toContain("<br")
     expect(text).not.toContain("<p>")
+  })
+})
+
+describe("clientKeyFromHeaders", () => {
+  it("uses the first x-forwarded-for entry, trimmed", () => {
+    expect(clientKeyFromHeaders(new Headers({ "x-forwarded-for": " 1.2.3.4 , 10.0.0.1" }))).toBe("1.2.3.4")
+  })
+
+  it("falls back to x-real-ip when x-forwarded-for is missing", () => {
+    expect(clientKeyFromHeaders(new Headers({ "x-real-ip": "5.6.7.8" }))).toBe("5.6.7.8")
+  })
+
+  it("falls back to x-real-ip when the first x-forwarded-for entry is blank", () => {
+    expect(clientKeyFromHeaders(new Headers({ "x-forwarded-for": " , 10.0.0.1", "x-real-ip": "5.6.7.8" }))).toBe(
+      "5.6.7.8",
+    )
+  })
+
+  it("returns \"unknown\" when no client IP header is present", () => {
+    expect(clientKeyFromHeaders(new Headers())).toBe("unknown")
   })
 })

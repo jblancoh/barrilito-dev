@@ -41,7 +41,9 @@ feature branch; push/PR are the owner's decision (owner asked to continue after 
   maintenance content on `/`; `/robots.txt` 200. Normal build: `/` 200, `/maintenance` 307 → `/`.
 - [x] T2 Guard postal address parsing. Route: inline.
   TDD: RED 3 failing (`postalAddress` not exported) → GREEN 14/14; tsc OK. Blank parts dropped; blank location → no `address`.
-- [ ] T3 Testable client-key extraction. Route: inline.
+- [x] T3 Testable client-key extraction. Route: inline.
+  TDD: RED 4 failing (`clientKeyFromHeaders` missing) → GREEN; suite 278/278; tsc, lint OK. Action now calls
+  `clientKeyFromHeaders(await headers())`; `x-real-ip` is also trimmed.
 - [ ] T4 Pin Node engine. Route: inline (one line).
 
 Not applied: React Compiler lint warnings refactor (separate feature, touches the 3D board).
@@ -52,4 +54,4 @@ Not applied: React Compiler lint warnings refactor (separate feature, touches th
 - `pnpm test`, `pnpm lint`, `tsc --noEmit`, `pnpm build` pass.
 
 ## Progress
-- T1, T2 done. Next: T3.
+- T1, T2, T3 done. Next: T4.

@@ -1,7 +1,7 @@
 "use server"
 
 import { headers } from "next/headers"
-import { createRateLimiter, type RateLimiter } from "@/lib/contact"
+import { clientKeyFromHeaders, createRateLimiter, type RateLimiter } from "@/lib/contact"
 import {
   CONTACT_RATE_LIMIT,
   CONTACT_RATE_LIMIT_WINDOW_MS,
@@ -20,22 +20,6 @@ const rateLimiter: RateLimiter = createRateLimiter({
   limit: CONTACT_RATE_LIMIT,
   windowMs: CONTACT_RATE_LIMIT_WINDOW_MS,
 })
-
-/** First entry of `x-forwarded-for`, else `x-real-ip`, else "unknown". */
-async function resolveClientKey(): Promise<string> {
-  const headerList = await headers()
-
-  const forwardedFor = headerList.get("x-forwarded-for")
-  if (forwardedFor) {
-    const first = forwardedFor.split(",")[0]?.trim()
-    if (first) return first
-  }
-
-  const realIp = headerList.get("x-real-ip")
-  if (realIp) return realIp
-
-  return "unknown"
-}
 
 /**
  * Server Action bound to the contact form via `useActionState`. Thin adapter
@@ -61,7 +45,7 @@ export async function sendContactMessage(
 
   return handleContactSubmission(fields, {
     now: Date.now(),
-    clientKey: await resolveClientKey(),
+    clientKey: clientKeyFromHeaders(await headers()),
     rateLimiter,
     send: (email) => sendWithResend(email, { apiKey: apiKey ?? "" }),
     config: { from, to, apiKeyPresent: Boolean(apiKey) },
