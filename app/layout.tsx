@@ -28,6 +28,13 @@ export const metadata: Metadata = {
   authors: [{ name: "Jonathan Blanco", url: "/" }],
   creator: "Jonathan Blanco",
   alternates: { canonical: "/" },
+  // Black barrel on light tabs, white on dark; /favicon.ico (mid-gray) is only the no-media fallback.
+  icons: {
+    icon: [
+      { url: "/icon-light.png", type: "image/png", media: "(prefers-color-scheme: light)" },
+      { url: "/icon-dark.png", type: "image/png", media: "(prefers-color-scheme: dark)" },
+    ],
+  },
   robots: {
     index: true,
     follow: true,

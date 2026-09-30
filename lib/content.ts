@@ -92,7 +92,7 @@ export interface Case {
   /** Omitted (never "#") when there is nowhere public to send visitors. */
   link?: string
   /** Omitted when there is no screenshot/flyer to show; the card design handles that case. */
-  image?: string
+  images?: string[]
 }
 
 /** Featured cases, in board order. */
@@ -104,6 +104,7 @@ export const featuredCases: Case[] = [
       "Dictaminador con LLMs para aseguradoras: genera resumen médico, dictamen administrativo, dictamen médico y análisis de cuenta, y alerta sobrecargos contra la lista de precios convenida.",
     highlights: ["Resumen médico automático", "Dictamen administrativo y médico", "Alerta de sobrecargos"],
     tags: ["LLMs", "Salud", "Radius"],
+    images: ["/cases/clainor.webp"],
   },
   {
     title: "YUM Delivery",
@@ -113,6 +114,7 @@ export const featuredCases: Case[] = [
       "Ventas, producto, soporte y desarrollo con un equipo de 3. Tres años compitiendo con apps nacionales de delivery en Villahermosa, con geolocalización basada en H3.",
     highlights: ["Equipo de 3 personas", "3 años en el mercado", "Geolocalización con H3"],
     tags: ["CTO", "Delivery", "Geolocalización"],
+    images: ["/cases/yum-delivery.webp"],
   },
   {
     title: "Directorio Solidario",
@@ -120,7 +122,7 @@ export const featuredCases: Case[] = [
       "Tras el incendio de la Feria Tabasco, lo levanté en menos de 2 horas. En 24 horas había 43 comercios verificados, más aliados como Flick sumando comandas gratis. Ya no está en línea.",
     highlights: ["Levantado en menos de 2 horas", "43 comercios verificados en 24 horas", "Aliados como Flick"],
     tags: ["Respuesta rápida", "Comunidad"],
-    image: "/cases/directorio-solidario.webp",
+    images: ["/cases/directorio-solidario.webp", "/cases/directorio-solidario-nave1.webp"],
   },
   {
     title: "TheKickoff",
@@ -129,6 +131,7 @@ export const featuredCases: Case[] = [
     highlights: ["Gestión de torneos", "Rumbo a red social + mapa de torneos"],
     tags: ["Deporte", "Producto propio"],
     link: "https://demo.thekickoff.lat/",
+    images: ["/cases/thekickoff-hero.webp", "/cases/thekickoff-platform.webp"],
   },
 ]
 
@@ -136,8 +139,19 @@ export const featuredCases: Case[] = [
 export const secondaryCases: Case[] = [
   {
     title: "Simulador de Bolsa de Valores",
-    description: "Construido solo, de punta a punta, con React Native, Next.js y Lambdas.",
+    org: "Radius",
+    role: "Líder de desarrollo",
+    description:
+      "Lideré su desarrollo junto a Softgin, fábrica de software aliada de Radius: una app móvil para simular inversiones en bolsa, con su gestor web, sobre React Native, Next.js y Lambdas.",
     tags: ["React Native", "Next.js", "AWS Lambda"],
+  },
+  {
+    title: "Whtelabs",
+    org: "Radius",
+    role: "Líder de desarrollo",
+    description:
+      "Plataforma de servicios para medios de pago (emisión y administración de tarjetas). Estuve desde la formación de los equipos: migración de infraestructura, integraciones con STP e i2c, una de las apps móviles y servicios de perfiles, cuentas CLABE, tarjetas y empresas.",
+    tags: ["Fintech", "Medios de pago", "STP", "i2c", "BFF"],
   },
   {
     title: "Graviti",

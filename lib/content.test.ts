@@ -27,8 +27,7 @@ describe("content invariants", () => {
 
   it("never references the generic /placeholder.svg image", () => {
     for (const c of allCases) {
-      expect(c.image).not.toBe("/placeholder.svg")
-      if (c.image) expect(c.image).not.toContain("/placeholder.svg")
+      for (const image of c.images ?? []) expect(image).not.toContain("/placeholder.svg")
     }
   })
 
