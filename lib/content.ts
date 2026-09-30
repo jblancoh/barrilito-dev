@@ -143,6 +143,14 @@ export const secondaryCases: Case[] = [
     tags: ["React Native", "Next.js", "AWS Lambda"],
   },
   {
+    title: "Whtelabs",
+    org: "Radius",
+    role: "Líder de desarrollo",
+    description:
+      "Plataforma de servicios para medios de pago (emisión y administración de tarjetas). Estuve desde la formación de los equipos: migración de infraestructura, integraciones con STP e i2c, una de las apps móviles y servicios de perfiles, cuentas CLABE, tarjetas y empresas.",
+    tags: ["Fintech", "Medios de pago", "STP", "i2c", "BFF"],
+  },
+  {
     title: "Graviti",
     role: "Tech lead",
     description: "Plataforma de créditos donde lideré el equipo técnico y subimos +3% la conversión.",
