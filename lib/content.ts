@@ -92,7 +92,7 @@ export interface Case {
   /** Omitted (never "#") when there is nowhere public to send visitors. */
   link?: string
   /** Omitted when there is no screenshot/flyer to show; the card design handles that case. */
-  image?: string
+  images?: string[]
 }
 
 /** Featured cases, in board order. */
@@ -113,7 +113,7 @@ export const featuredCases: Case[] = [
       "Ventas, producto, soporte y desarrollo con un equipo de 3. Tres años compitiendo con apps nacionales de delivery en Villahermosa, con geolocalización basada en H3.",
     highlights: ["Equipo de 3 personas", "3 años en el mercado", "Geolocalización con H3"],
     tags: ["CTO", "Delivery", "Geolocalización"],
-    image: "/cases/yum-delivery.webp",
+    images: ["/cases/yum-delivery.webp"],
   },
   {
     title: "Directorio Solidario",
@@ -121,7 +121,7 @@ export const featuredCases: Case[] = [
       "Tras el incendio de la Feria Tabasco, lo levanté en menos de 2 horas. En 24 horas había 43 comercios verificados, más aliados como Flick sumando comandas gratis. Ya no está en línea.",
     highlights: ["Levantado en menos de 2 horas", "43 comercios verificados en 24 horas", "Aliados como Flick"],
     tags: ["Respuesta rápida", "Comunidad"],
-    image: "/cases/directorio-solidario.webp",
+    images: ["/cases/directorio-solidario.webp", "/cases/directorio-solidario-nave1.webp"],
   },
   {
     title: "TheKickoff",
