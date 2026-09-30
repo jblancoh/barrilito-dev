@@ -113,6 +113,7 @@ export const featuredCases: Case[] = [
       "Ventas, producto, soporte y desarrollo con un equipo de 3. Tres años compitiendo con apps nacionales de delivery en Villahermosa, con geolocalización basada en H3.",
     highlights: ["Equipo de 3 personas", "3 años en el mercado", "Geolocalización con H3"],
     tags: ["CTO", "Delivery", "Geolocalización"],
+    image: "/cases/yum-delivery.webp",
   },
   {
     title: "Directorio Solidario",
