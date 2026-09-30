@@ -30,10 +30,10 @@ export function ProjectsSection({ nav }: { nav: BoardNav }) {
         return (
           <Card key={c.title} className="overflow-hidden border-none">
             {c.images && c.images.length > 1 ? (
-              <div className="grid grid-cols-2 gap-px bg-border">
+              <div className="grid grid-cols-2 items-center gap-px bg-border">
                 {c.images.map((src, i) => (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img key={src} src={src} alt={`${c.title} ${i + 1}`} className="aspect-square w-full object-cover" />
+                  <img key={src} src={src} alt={`${c.title} ${i + 1}`} className="h-auto w-full" />
                 ))}
               </div>
             ) : c.images?.[0] ? (

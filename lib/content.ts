@@ -104,6 +104,7 @@ export const featuredCases: Case[] = [
       "Dictaminador con LLMs para aseguradoras: genera resumen médico, dictamen administrativo, dictamen médico y análisis de cuenta, y alerta sobrecargos contra la lista de precios convenida.",
     highlights: ["Resumen médico automático", "Dictamen administrativo y médico", "Alerta de sobrecargos"],
     tags: ["LLMs", "Salud", "Radius"],
+    images: ["/cases/clainor.webp"],
   },
   {
     title: "YUM Delivery",
@@ -130,6 +131,7 @@ export const featuredCases: Case[] = [
     highlights: ["Gestión de torneos", "Rumbo a red social + mapa de torneos"],
     tags: ["Deporte", "Producto propio"],
     link: "https://demo.thekickoff.lat/",
+    images: ["/cases/thekickoff-hero.webp", "/cases/thekickoff-platform.webp"],
   },
 ]
 
