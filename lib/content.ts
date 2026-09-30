@@ -139,6 +139,8 @@ export const featuredCases: Case[] = [
 export const secondaryCases: Case[] = [
   {
     title: "Simulador de Bolsa de Valores",
+    org: "Radius",
+    role: "Líder de desarrollo",
     description: "Construido solo, de punta a punta, con React Native, Next.js y Lambdas.",
     tags: ["React Native", "Next.js", "AWS Lambda"],
   },
