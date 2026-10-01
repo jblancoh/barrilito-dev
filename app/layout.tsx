@@ -9,6 +9,7 @@ import { Navbar } from "@/components/navbar"
 import { RenderModeProvider } from "@/components/game/render-mode-context"
 import { SiteChrome } from "@/components/site-chrome"
 import { ThemeProvider } from "@/components/theme-provider"
+import { ReferralAttributionTracker } from "@/components/referral-attribution-tracker"
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/site-metadata"
 import { resolveSiteUrl } from "@/lib/site-url"
 
@@ -79,8 +80,8 @@ export default function RootLayout({
         </ThemeProvider>
         <Analytics />
         <SpeedInsights />
+        <ReferralAttributionTracker enabled={process.env.NEXT_PUBLIC_ENABLE_REFERRAL_ATTRIBUTION === "true"} />
       </body>
     </html>
   )
 }
-
