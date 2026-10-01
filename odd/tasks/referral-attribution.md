@@ -41,14 +41,14 @@ Test setup note: initial `npm test` could not find the workspace Vitest binary b
 ## Delivery
 - Feature branch: `jblancoh/feature-referral-attribution`.
 - Delivery strategy: `ask-on-risk` (default); forecast approximately 180 authored changed lines, below the ~400-line planning budget.
-- Planned work unit: one Conventional Commit containing tracker, tests, and operator documentation.
+- Work-unit commit: `8f3592f05d18ba9ed4fea94a3816f9fa56948e7a` (`feat(analytics): track client referral landings`), containing tracker, tests, and operator documentation.
 
 ## Progress
 - Exploration confirmed existing Analytics at `app/layout.tsx`, installed `@vercel/analytics` 2.x, and found that the contact form removes only `brief` while preserving other query params and hashes.
 - T1 and T2 are complete. TDD observed the expected missing-module failure before implementation; focused tests, full tests, and lint now pass.
 
 ## Next Step
-Record the final commit identity after creating the work-unit commit.
+Implementation and verification are complete; parent owns the post-commit native review flow.
 
 ## Relevant Files
 - `app/layout.tsx` — root server layout with existing Analytics component.
